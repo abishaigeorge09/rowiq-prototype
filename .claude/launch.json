@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "rowiq",
+      "runtimeExecutable": "/Users/abishaigeorgegosula/rowiq-prototype/start-dev.sh",
+      "runtimeArgs": [],
+      "port": 5173
+    }
+  ]
+}
