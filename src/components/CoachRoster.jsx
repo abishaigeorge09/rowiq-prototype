@@ -78,7 +78,7 @@ export default function CoachRoster({ athletes, boats, publishedLineups, onUpdat
               <button
                 key={athlete.id}
                 onClick={() => setSelectedAthleteId(athlete.id)}
-                className="w-full flex items-center gap-4 bg-white border border-[#E5E7EB] rounded-xl px-4 py-3 hover:bg-[#141f38] hover:border-white/[0.12] transition-all text-left group"
+                className="w-full flex items-center gap-4 bg-white border border-[#E5E7EB] rounded-xl px-4 py-3 hover:bg-[#F9FAFB] hover:border-[#D1D5DB] transition-all text-left group"
               >
                 {/* Avatar */}
                 <div
@@ -109,7 +109,7 @@ export default function CoachRoster({ athletes, boats, publishedLineups, onUpdat
                 <svg
                   width="16" height="16" viewBox="0 0 24 24" fill="none"
                   stroke="currentColor" strokeWidth="2"
-                  className="text-[#334155] group-hover:text-[#6B7280] transition-colors shrink-0"
+                  className="text-[#9CA3AF] group-hover:text-[#6B7280] transition-colors shrink-0"
                 >
                   <polyline points="9 18 15 12 9 6" />
                 </svg>
