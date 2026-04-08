@@ -7,6 +7,7 @@ import AddBoatModal from './components/AddBoatModal';
 import PublishModal from './components/PublishModal';
 import EmailPreview from './components/EmailPreview';
 import LiveSession from './components/LiveSession';
+import SessionsList from './components/SessionsList';
 import Results from './components/Results';
 import CoachRoster from './components/CoachRoster';
 import AthleteView from './components/AthleteView';
@@ -18,6 +19,7 @@ import { useAuthStore } from './stores/authStore.js';
 import { useRosterStore } from './stores/rosterStore.js';
 import { supabase, IS_SUPABASE } from './lib/supabase.js';
 import { DEMO_ATHLETES, DEMO_PUBLISHED_LINEUPS } from './lib/demoData.js';
+import { DUMMY_SESSIONS } from './utils/dummyData.js';
 
 // Initial boats
 const INITIAL_BOATS = [
@@ -31,8 +33,8 @@ const initialState = {
   boats: INITIAL_BOATS,
   published: false,
   publishData: null,
-  sessions: [],
-  publishedLineups: [], // All published lineup snapshots — source of truth for history
+  sessions: [...DUMMY_SESSIONS],
+  publishedLineups: [...DUMMY_SESSIONS], // All published lineup snapshots — source of truth for history
   pairs: [],
 };
 
@@ -179,10 +181,11 @@ function reducer(state, action) {
 
     case 'SAVE_SESSION': {
       const session = action.payload;
-      const lineupId = state.publishData?.lineupId;
+      const lineupId = session.lineupId; // Passed explicitly now
 
       const resultsObj = {
         completedAt: Date.now(),
+        workoutId: session.workoutId || lineupId,
         boats: session.results.map((r, i) => ({
           boatId: r.boatId,
           boatName: r.boatName,
@@ -192,8 +195,6 @@ function reducer(state, action) {
         })),
       };
 
-      // Only attach to published lineup if it exists and has no results yet
-      // (prevents overwriting Session 1 results when coach runs Session 2)
       const existingLineup = lineupId && state.publishedLineups.find(
         (l) => l.id === lineupId && !l.results
       );
@@ -204,19 +205,18 @@ function reducer(state, action) {
           lineup.id !== lineupId ? lineup : { ...lineup, results: resultsObj }
         );
       } else {
-        // Always create a new entry for subsequent sessions or no published lineup
         const newLineup = {
-          id: session.id,
+          id: session.lineupId,
           title: session.title,
           date: session.date,
           time: session.time,
-          note: '',
+          note: session.note || '',
           publishedAt: Date.now(),
           results: resultsObj,
           boats: session.results.map((r) => ({
             id: r.boatId,
             name: r.boatName,
-            size: r.crew?.length || 0,
+            size: session.boatsSnapshot?.find(b => b.id === r.boatId)?.size || r.crew?.length || 0,
             athletes: r.crew || [],
           })),
         };
@@ -315,6 +315,7 @@ function reducer(state, action) {
 export default function App() {
   const [state, dispatch] = useReducer(reducer, initialState);
   const [screen, setScreen] = useState('lineup');
+  const [activeSessionLineupId, setActiveSessionLineupId] = useState(null);
   const [showAddBoat, setShowAddBoat] = useState(false);
   const [showPublish, setShowPublish] = useState(false);
   const [showEmail, setShowEmail] = useState(false);
@@ -520,13 +521,16 @@ export default function App() {
     }
   }
 
-  async function handleSaveSession(sessionData) {
+  async function handleSaveSession(sessionData, isLastRun = true) {
     dispatch({ type: 'SAVE_SESSION', payload: sessionData });
-    setScreen('history');
+    if (isLastRun) {
+      setScreen('history');
+    }
 
-    if (IS_SUPABASE && user?.team_id && publishData?.lineupId) {
+    if (IS_SUPABASE && user?.team_id && sessionData.lineupId) {
       const results = {
         completedAt: Date.now(),
+        workoutId: sessionData.workoutId || sessionData.lineupId,
         boats: sessionData.results.map((r, i) => ({
           boatId: r.boatId,
           boatName: r.boatName,
@@ -535,10 +539,33 @@ export default function App() {
           finishTime: r.finishTime,
         })),
       };
-      await supabase
-        .from('published_lineups')
-        .update({ results })
-        .eq('id', publishData.lineupId);
+
+      // Check if we are updating the existing queued lineup, or inserting a parallel spawn
+      const exists = publishedLineups.some(l => l.id === sessionData.lineupId);
+      
+      if (exists) {
+        await supabase
+          .from('published_lineups')
+          .update({ results })
+          .eq('id', sessionData.lineupId)
+          .catch(() => {}); // Catch silent db network errors
+      } else {
+        await supabase.from('published_lineups').insert({
+          id: sessionData.lineupId,
+          team_id: user.team_id,
+          title: sessionData.title,
+          date: sessionData.date || null,
+          time: sessionData.time || null,
+          note: sessionData.note || '',
+          boats: sessionData.results.map((r) => ({
+            id: r.boatId,
+            name: r.boatName,
+            size: sessionData.boatsSnapshot?.find(b => b.id === r.boatId)?.size || r.crew?.length || 0,
+            athletes: r.crew || [],
+          })),
+          results: results,
+        });
+      }
     }
   }
 
@@ -726,7 +753,10 @@ export default function App() {
                   {published && !swapMode && (
                     <>
                       <button
-                        onClick={() => setScreen('session')}
+                        onClick={() => {
+                          if (publishData?.lineupId) setActiveSessionLineupId(publishData.lineupId);
+                          setScreen('session');
+                        }}
                         className="w-full py-4 rounded-xl bg-[#22C55E] text-white font-bold text-lg hover:bg-[#16a34a] transition-colors"
                       >
                         START SESSION
@@ -776,16 +806,55 @@ export default function App() {
             />
           )}
 
-          {/* Session Screen — always accessible */}
-          {screen === 'session' && (
-            <LiveSession
-              boats={boats}
-              athletes={athletes}
-              publishData={publishData}
-              onSaveSession={handleSaveSession}
-              onBack={() => setScreen('lineup')}
+          {/* Session Screen — Queued Sessions List or Live Timer */}
+          {screen === 'session' && !activeSessionLineupId && (
+            <SessionsList 
+               publishedLineups={publishedLineups}
+               athletes={athletes}
+               onStartSession={(id) => setActiveSessionLineupId(id)}
             />
           )}
+
+          {screen === 'session' && activeSessionLineupId && (() => {
+             const lineup = publishedLineups.find(l => l.id === activeSessionLineupId);
+             if (!lineup) {
+               // Fallback if lineup got deleted or missing
+               return (
+                  <div className="p-8 text-center text-gray-500">
+                    Lineup not found. <button onClick={() => setActiveSessionLineupId(null)} className="text-blue-500 underline">Go back</button>
+                  </div>
+               );
+             }
+             
+             // Reconstruct initialBoats for LiveSession from the lineup snapshot
+             const reconstructedBoats = lineup.boats.map(b => {
+                const seats = [];
+                for(let i=1; i<=b.size; i++) {
+                   const ath = b.athletes.find(a => a.seatNum === i);
+                   seats.push({ seatNum: i, athleteId: ath ? ath.id : null });
+                }
+                return { id: b.id, name: b.name, size: b.size, seats };
+             });
+
+             const runPublishData = {
+                title: lineup.title,
+                date: lineup.date,
+                time: lineup.time,
+                note: lineup.note,
+                lineupId: lineup.id,
+             };
+
+             return (
+               <LiveSession
+                 initialBoats={reconstructedBoats}
+                 athletes={athletes}
+                 publishData={runPublishData}
+                 onSaveSession={handleSaveSession}
+                 onBack={() => setActiveSessionLineupId(null)} // Returns to list
+                 onGoToHistory={() => { setActiveSessionLineupId(null); setScreen('history'); }} // Transitions seamlessly
+               />
+             );
+          })()}
 
           {/* History / Performance Dashboard */}
           {screen === 'history' && (

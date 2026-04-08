@@ -1,110 +1,178 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import Stopwatch from './Stopwatch';
-import { formatTimerMs } from '../utils/helpers';
+import { formatTimerMs, generateId } from '../utils/helpers';
+import CreateRunSwapModal from './CreateRunSwapModal';
 
-const SESSION_STORAGE_KEY = 'rowiq_session';
+const SESSION_STORAGE_KEY = 'rowiq_session_multi';
 
-export default function LiveSession({ boats, athletes, publishData, onSaveSession, onBack }) {
-  const [boatStartTimes, setBoatStartTimes] = useState({});
-  const [pausedOffsets, setPausedOffsets] = useState({});
-  const [pausedBoats, setPausedBoats] = useState({});
-  const [pauseStarted, setPauseStarted] = useState({});
-  const [finishTimes, setFinishTimes] = useState({});
+export default function LiveSession({ initialBoats, athletes, publishData, onSaveSession, onBack, onGoToHistory }) {
+  // State for all runs in the session
+  const [runs, setRuns] = useState(() => {
+    try {
+      const saved = localStorage.getItem(SESSION_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.runs && parsed.runs.length > 0) {
+           // Only restore if the saved session belongs to the current lineup!
+           const loadedWorkoutId = parsed.runs[0].workoutId || parsed.runs[0].lineupId;
+           if (loadedWorkoutId === publishData?.lineupId) {
+             return parsed.runs;
+           }
+        }
+      }
+    } catch { /* ignore */ }
+
+    // First run is derived from initialBoats
+    return [{
+       id: generateId(),
+       title: 'Run 1',
+       lineupId: publishData?.lineupId,
+       workoutId: publishData?.lineupId,
+       boatsSnapshot: initialBoats,
+       boatStartTimes: {},
+       pausedOffsets: {},
+       pausedBoats: {},
+       pauseStarted: {},
+       finishTimes: {}
+    }];
+  });
+
+  const [activeRunId, setActiveRunId] = useState(runs[0].id);
+  const [showSwapModal, setShowSwapModal] = useState(false);
   const [liveElapsed, setLiveElapsed] = useState({});
   const rafRef = useRef(null);
 
+  const activeRun = runs.find(r => r.id === activeRunId);
+  const boats = activeRun.boatsSnapshot;
   const activeBoats = boats.filter((b) => b.seats.some((s) => s.athleteId));
-  const anyStarted = activeBoats.some((b) => boatStartTimes[b.id]);
-  const allFinished = activeBoats.length > 0 && activeBoats.every((b) => finishTimes[b.id]);
-  const anyRunning = activeBoats.some((b) => boatStartTimes[b.id] && !finishTimes[b.id] && !pausedBoats[b.id]);
 
-  // Persist session
+  const updateRun = (id, partial) => {
+    setRuns(prev => prev.map(r => r.id === id ? { ...r, ...partial } : r));
+  };
+
+  // Persist runs
   useEffect(() => {
-    if (!anyStarted) return;
+    const hasAnyStarted = runs.some(r => Object.keys(r.boatStartTimes).length > 0);
+    if (!hasAnyStarted && runs.length === 1) return; // don't persist fresh single tab until started
     try {
-      localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify({
-        boatStartTimes, pausedOffsets, pausedBoats, pauseStarted, finishTimes,
-        publishData, savedAt: Date.now(),
-      }));
+      localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify({ runs, savedAt: Date.now() }));
     } catch { /* ignore */ }
-  }, [boatStartTimes, pausedOffsets, pausedBoats, pauseStarted, finishTimes, publishData, anyStarted]);
+  }, [runs]);
 
-  // Restore on mount
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(SESSION_STORAGE_KEY);
-      if (!raw) return;
-      const saved = JSON.parse(raw);
-      if (Date.now() - saved.savedAt > 8 * 60 * 60 * 1000) return;
-      if (saved.boatStartTimes && Object.keys(saved.boatStartTimes).length) {
-        setBoatStartTimes(saved.boatStartTimes);
-        setPausedOffsets(saved.pausedOffsets || {});
-        setPausedBoats(saved.pausedBoats || {});
-        setPauseStarted(saved.pauseStarted || {});
-        setFinishTimes(saved.finishTimes || {});
-      }
-    } catch { /* ignore */ }
-  }, []);
-
-  // Live elapsed for leaderboard
+  // Live elapsed is computed for the *activeRun*
   const updateLive = useCallback(() => {
+    if (!activeRun) return;
     const now = Date.now();
     const updated = {};
     activeBoats.forEach((b) => {
-      const start = boatStartTimes[b.id];
+      const start = activeRun.boatStartTimes[b.id];
       if (!start) { updated[b.id] = 0; return; }
-      const paused = pausedBoats[b.id];
-      const pausedMs = (pausedOffsets[b.id] || 0) + (paused && pauseStarted[b.id] ? now - pauseStarted[b.id] : 0);
-      updated[b.id] = finishTimes[b.id]
-        ? finishTimes[b.id] - start - (pausedOffsets[b.id] || 0)
+      const paused = activeRun.pausedBoats[b.id];
+      const pausedMs = (activeRun.pausedOffsets[b.id] || 0) + (paused && activeRun.pauseStarted[b.id] ? now - activeRun.pauseStarted[b.id] : 0);
+      updated[b.id] = activeRun.finishTimes[b.id]
+        ? activeRun.finishTimes[b.id] - start - (activeRun.pausedOffsets[b.id] || 0)
         : now - start - pausedMs;
     });
     setLiveElapsed(updated);
     rafRef.current = requestAnimationFrame(updateLive);
-  }, [activeBoats, boatStartTimes, pausedOffsets, pausedBoats, pauseStarted, finishTimes]);
+  }, [activeRun, activeBoats]);
 
   useEffect(() => {
-    if (anyStarted) rafRef.current = requestAnimationFrame(updateLive);
+    // Only run raf if active run has started boats
+    if (activeRun && Object.keys(activeRun.boatStartTimes).length > 0) {
+      rafRef.current = requestAnimationFrame(updateLive);
+    }
     return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
-  }, [anyStarted, updateLive]);
+  }, [activeRun, updateLive]);
 
-  function startBoat(boatId) { setBoatStartTimes((prev) => ({ ...prev, [boatId]: Date.now() })); }
+  function startBoat(boatId) { 
+    updateRun(activeRunId, { boatStartTimes: { ...activeRun.boatStartTimes, [boatId]: Date.now() } });
+  }
+
   function startAll() {
     const now = Date.now();
     const starts = {};
-    activeBoats.forEach((b) => { if (!boatStartTimes[b.id]) starts[b.id] = now; });
-    setBoatStartTimes((prev) => ({ ...prev, ...starts }));
-  }
-  function handlePause(boatId) {
-    if (!boatStartTimes[boatId] || finishTimes[boatId]) return;
-    setPausedBoats((prev) => ({ ...prev, [boatId]: true }));
-    setPauseStarted((prev) => ({ ...prev, [boatId]: Date.now() }));
-  }
-  function handleResume(boatId) {
-    const now = Date.now();
-    const added = now - (pauseStarted[boatId] || now);
-    setPausedOffsets((prev) => ({ ...prev, [boatId]: (prev[boatId] || 0) + added }));
-    setPausedBoats((prev) => ({ ...prev, [boatId]: false }));
-    setPauseStarted((prev) => { const n = { ...prev }; delete n[boatId]; return n; });
-  }
-  function handleFinish(boatId, time) {
-    if (pausedBoats[boatId]) handleResume(boatId);
-    setFinishTimes((prev) => ({ ...prev, [boatId]: time }));
-  }
-  function handleEndAll() {
-    const now = Date.now();
-    activeBoats.forEach((b) => { if (pausedBoats[b.id]) handleResume(b.id); });
-    const finals = {};
-    activeBoats.forEach((b) => { if (boatStartTimes[b.id] && !finishTimes[b.id]) finals[b.id] = now; });
-    setFinishTimes((prev) => ({ ...prev, ...finals }));
+    activeBoats.forEach((b) => { if (!activeRun.boatStartTimes[b.id]) starts[b.id] = now; });
+    updateRun(activeRunId, { boatStartTimes: { ...activeRun.boatStartTimes, ...starts } });
   }
 
-  function handleSave() {
-    const results = activeBoats
+  function handlePause(boatId) {
+    if (!activeRun.boatStartTimes[boatId] || activeRun.finishTimes[boatId]) return;
+    updateRun(activeRunId, { 
+       pausedBoats: { ...activeRun.pausedBoats, [boatId]: true },
+       pauseStarted: { ...activeRun.pauseStarted, [boatId]: Date.now() }
+    });
+  }
+
+  function handleResume(boatId) {
+    const now = Date.now();
+    const added = now - (activeRun.pauseStarted[boatId] || now);
+    const nPauseStarted = { ...activeRun.pauseStarted };
+    delete nPauseStarted[boatId];
+    updateRun(activeRunId, {
+      pausedOffsets: { ...activeRun.pausedOffsets, [boatId]: (activeRun.pausedOffsets[boatId] || 0) + added },
+      pausedBoats: { ...activeRun.pausedBoats, [boatId]: false },
+      pauseStarted: nPauseStarted
+    });
+  }
+
+  function handleFinish(boatId, time) {
+    if (activeRun.pausedBoats[boatId]) handleResume(boatId);
+    updateRun(activeRunId, { finishTimes: { ...activeRun.finishTimes, [boatId]: time } });
+  }
+
+  function handleEndAll() {
+    const now = Date.now();
+    let r = { ...activeRun };
+    activeBoats.forEach((b) => { 
+      if (r.pausedBoats[b.id]) {
+        const added = now - (r.pauseStarted[b.id] || now);
+        r.pausedOffsets[b.id] = (r.pausedOffsets[b.id] || 0) + added;
+        r.pausedBoats[b.id] = false;
+        delete r.pauseStarted[b.id];
+      }
+    });
+    
+    activeBoats.forEach((b) => { 
+      if (r.boatStartTimes[b.id] && !r.finishTimes[b.id]) {
+        r.finishTimes[b.id] = now;
+      }
+    });
+
+    updateRun(activeRunId, r);
+  }
+
+  function handleCreateRun(newBoats) {
+    const newRun = {
+      id: generateId(),
+      title: `Run ${runs.length + 1}`,
+      lineupId: crypto.randomUUID ? crypto.randomUUID() : generateId(),
+      workoutId: publishData?.lineupId,
+      boatsSnapshot: newBoats,
+      boatStartTimes: {},
+      pausedOffsets: {},
+      pausedBoats: {},
+      pauseStarted: {},
+      finishTimes: {}
+    };
+    setRuns([...runs, newRun]);
+    setActiveRunId(newRun.id);
+    setShowSwapModal(false);
+  }
+
+  function handleCompleteSession() {
+    runs.forEach(r => saveRun(r));
+    try { localStorage.removeItem(SESSION_STORAGE_KEY); } catch { /* ignore */ }
+    onGoToHistory();
+  }
+
+  function saveRun(run) {
+    const runBoats = run.boatsSnapshot.filter(b => b.seats.some(s => s.athleteId));
+    const results = runBoats
       .map((boat) => {
-        const start = boatStartTimes[boat.id];
-        const finish = finishTimes[boat.id];
-        const elapsed = start && finish ? finish - start - (pausedOffsets[boat.id] || 0) : null;
+        const start = run.boatStartTimes[boat.id];
+        const finish = run.finishTimes[boat.id];
+        const elapsed = start && finish ? finish - start - (run.pausedOffsets[boat.id] || 0) : null;
         return {
           boatId: boat.id,
           boatName: boat.name,
@@ -117,46 +185,73 @@ export default function LiveSession({ boats, athletes, publishData, onSaveSessio
         };
       })
       .sort((a, b) => (a.elapsed || Infinity) - (b.elapsed || Infinity));
-    try { localStorage.removeItem(SESSION_STORAGE_KEY); } catch { /* ignore */ }
+
     onSaveSession({
-      id: crypto.randomUUID ? crypto.randomUUID() : `s-${Date.now()}`,
-      title: publishData?.title || 'Session',
+      id: run.id,
+      title: publishData?.title ? `${publishData.title} · ${run.title}` : run.title,
+      lineupId: run.lineupId,
+      workoutId: run.workoutId,
+      boatsSnapshot: run.boatsSnapshot,
       date: publishData?.date || new Date().toISOString().split('T')[0],
       time: publishData?.time || new Date().toLocaleTimeString(),
       results,
-      startTime: Math.min(...Object.values(boatStartTimes).filter(Boolean)),
-    });
+      startTime: Math.min(...Object.values(run.boatStartTimes).filter(Boolean)),
+    }, false); // isLastRun = false so App.jsx doesn't auto-redirect immediately
   }
 
-  function handleNewSession() {
-    try { localStorage.removeItem(SESSION_STORAGE_KEY); } catch { /* ignore */ }
-    setBoatStartTimes({});
-    setPausedOffsets({});
-    setPausedBoats({});
-    setPauseStarted({});
-    setFinishTimes({});
-    setLiveElapsed({});
-  }
+  const anyStarted = activeBoats.some((b) => activeRun.boatStartTimes[b.id]);
+  const allFinished = activeBoats.length > 0 && activeBoats.every((b) => activeRun.finishTimes[b.id]);
+  const anyRunning = activeBoats.some((b) => activeRun.boatStartTimes[b.id] && !activeRun.finishTimes[b.id] && !activeRun.pausedBoats[b.id]);
 
-  const placements = {};
+  const allRunsFinished = runs.every(r => {
+    const rBoats = r.boatsSnapshot.filter(b => b.seats.some(s => s.athleteId));
+    return rBoats.length > 0 && rBoats.every(b => r.finishTimes[b.id]);
+  });
+
   const finishedBoats = activeBoats
-    .filter((b) => finishTimes[b.id] && boatStartTimes[b.id])
+    .filter((b) => activeRun.finishTimes[b.id] && activeRun.boatStartTimes[b.id])
     .sort((a, b) => {
-      const ea = finishTimes[a.id] - boatStartTimes[a.id] - (pausedOffsets[a.id] || 0);
-      const eb = finishTimes[b.id] - boatStartTimes[b.id] - (pausedOffsets[b.id] || 0);
+      const ea = activeRun.finishTimes[a.id] - activeRun.boatStartTimes[a.id] - (activeRun.pausedOffsets[a.id] || 0);
+      const eb = activeRun.finishTimes[b.id] - activeRun.boatStartTimes[b.id] - (activeRun.pausedOffsets[b.id] || 0);
       return ea - eb;
     });
-  finishedBoats.forEach((b, i) => { placements[b.id] = i + 1; });
 
-  const notStartedBoats = activeBoats.filter((b) => !boatStartTimes[b.id]);
-
+  const notStartedBoats = activeBoats.filter((b) => !activeRun.boatStartTimes[b.id]);
   const allBoatElapsed = {};
   activeBoats.forEach((b) => { allBoatElapsed[b.name] = liveElapsed[b.id] || 0; });
 
   return (
-    <div className="px-4 sm:px-6 py-6 max-w-2xl mx-auto">
-      {/* Header */}
-      <div className="flex items-start justify-between mb-4">
+    <div className="px-4 sm:px-6 py-4 max-w-3xl mx-auto flex flex-col h-[calc(100vh-64px)] overflow-hidden">
+      
+      {/* Header Tabs */}
+      <div className="flex items-center gap-2 mb-4 overflow-x-auto scrollbar-none pb-2 shrink-0 border-b border-[#E5E7EB]">
+        {runs.map(r => (
+           <button
+             key={r.id}
+             onClick={() => setActiveRunId(r.id)}
+             className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-colors ${
+               activeRunId === r.id 
+                 ? 'bg-[#111827] text-white shadow-md' 
+                 : 'bg-white border border-[#E5E7EB] text-[#6B7280] hover:bg-[#F9FAFB] hover:border-[#D1D5DB]'
+             }`}
+           >
+             {r.title}
+             {r.saved && <span className="ml-2 text-green-400">✓</span>}
+             {Object.keys(r.boatStartTimes).length > 0 && Object.keys(r.finishTimes).length < activeBoats.length && !r.saved && (
+                <span className="ml-2 inline-block w-1.5 h-1.5 rounded-full bg-[#DC2626] animate-pulse" />
+             )}
+           </button>
+        ))}
+        <button 
+           onClick={() => setShowSwapModal(true)}
+           className="px-3 py-2 rounded-xl bg-[#F3F4F6] text-[#6B7280] hover:bg-[#E5E7EB] shrink-0 transition-colors"
+           title="New Run with Lineup Tweaks"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 5v14M5 12h14"/></svg>
+        </button>
+      </div>
+
+      <div className="flex items-start justify-between mb-4 shrink-0">
         <div>
           <button onClick={onBack} className="text-[#9CA3AF] text-sm hover:text-[#2563EB] transition-colors mb-1 flex items-center gap-1">
             ← Lineup
@@ -167,25 +262,26 @@ export default function LiveSession({ boats, athletes, publishData, onSaveSessio
           )}
         </div>
         <div className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold ${
-          !anyStarted ? 'bg-[#F3F4F6] text-[#6B7280]'
+          activeRun.saved ? 'bg-green-100 text-[#16A34A]'
+          : !anyStarted ? 'bg-[#F3F4F6] text-[#6B7280]'
           : anyRunning ? 'bg-blue-50 text-[#2563EB]'
           : allFinished ? 'bg-green-50 text-[#16A34A]'
           : 'bg-amber-50 text-amber-700'
         }`}>
-          {!anyStarted ? 'Ready' : anyRunning ? '● In Progress' : allFinished ? '✓ Completed' : 'Paused'}
+          {activeRun.saved ? '✓ Saved' : !anyStarted ? 'Ready' : anyRunning ? '● In Progress' : allFinished ? 'Completed' : 'Paused'}
         </div>
       </div>
 
       {/* Start all / End all */}
-      {notStartedBoats.length > 1 && (
-        <div className="mb-4">
+      {notStartedBoats.length > 1 && !activeRun.saved && (
+        <div className="mb-4 shrink-0">
           <button onClick={startAll} className="w-full py-3 rounded-xl bg-[#2563EB] text-white font-bold hover:bg-[#1d4ed8] transition-colors active:scale-95 shadow-sm">
             🚣 Start Race — All Boats
           </button>
         </div>
       )}
-      {anyRunning && (
-        <div className="mb-4">
+      {anyRunning && !activeRun.saved && (
+        <div className="mb-4 shrink-0">
           <button onClick={handleEndAll} className="w-full py-2.5 rounded-xl border border-[#FCA5A5] bg-red-50 text-[#DC2626] font-semibold hover:bg-red-100 transition-colors text-sm">
             End All Boats
           </button>
@@ -194,14 +290,23 @@ export default function LiveSession({ boats, athletes, publishData, onSaveSessio
 
       {/* Stopwatch */}
       {activeBoats.length > 0 ? (
-        <div className="bg-white border border-[#E5E7EB] rounded-2xl overflow-hidden mb-4 shadow-sm" style={{ minHeight: 480 }}>
+        <div className="bg-white border border-[#E5E7EB] rounded-2xl overflow-hidden mb-4 shadow-sm flex-1 relative min-h-[300px]">
+          {activeRun.saved && (
+             <div className="absolute inset-0 z-20 bg-white/70 backdrop-blur-sm flex items-center justify-center">
+               <div className="bg-white border border-[#E5E7EB] rounded-2xl p-6 shadow-xl text-center max-w-sm">
+                  <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center text-green-600 mx-auto mb-3 text-2xl font-bold">✓</div>
+                  <h3 className="font-bold text-[#111827] text-lg">Run Saved</h3>
+                  <p className="text-[#6B7280] text-sm mt-1 mb-4">The results of {activeRun.title} have been stored.</p>
+               </div>
+             </div>
+          )}
           <Stopwatch
             boats={boats}
             athletes={athletes}
-            boatStartTimes={boatStartTimes}
-            pausedOffsets={pausedOffsets}
-            pausedBoats={pausedBoats}
-            finishTimes={finishTimes}
+            boatStartTimes={activeRun.boatStartTimes}
+            pausedOffsets={activeRun.pausedOffsets}
+            pausedBoats={activeRun.pausedBoats}
+            finishTimes={activeRun.finishTimes}
             allBoatElapsed={allBoatElapsed}
             onStart={startBoat}
             onPause={handlePause}
@@ -210,20 +315,20 @@ export default function LiveSession({ boats, athletes, publishData, onSaveSessio
           />
         </div>
       ) : (
-        <div className="bg-white border border-[#E5E7EB] rounded-xl p-8 text-center mb-4">
+        <div className="bg-white border border-[#E5E7EB] rounded-xl p-8 text-center mb-4 flex-1">
           <p className="text-[#9CA3AF] text-sm">No athletes assigned. Go to Lineup to set up boats.</p>
         </div>
       )}
 
-      {/* Final results + save */}
+      {/* Final results section */}
       {allFinished && (
-        <div className="space-y-3">
+        <div className="space-y-3 shrink-0 pb-6">
           <div className="bg-white border border-[#E5E7EB] rounded-xl p-5 shadow-sm">
-            <h3 className="text-[#111827] font-bold mb-3 text-base">Final Results</h3>
+            <h3 className="text-[#111827] font-bold mb-3 text-base">Final Results - {activeRun.title}</h3>
             <div className="space-y-2">
               {finishedBoats.map((boat, i) => {
-                const elapsed = finishTimes[boat.id] - boatStartTimes[boat.id] - (pausedOffsets[boat.id] || 0);
-                const winnerElapsed = finishTimes[finishedBoats[0].id] - boatStartTimes[finishedBoats[0].id] - (pausedOffsets[finishedBoats[0].id] || 0);
+                const elapsed = activeRun.finishTimes[boat.id] - activeRun.boatStartTimes[boat.id] - (activeRun.pausedOffsets[boat.id] || 0);
+                const winnerElapsed = activeRun.finishTimes[finishedBoats[0].id] - activeRun.boatStartTimes[finishedBoats[0].id] - (activeRun.pausedOffsets[finishedBoats[0].id] || 0);
                 const gap = elapsed - winnerElapsed;
                 return (
                   <div key={boat.id} className="flex items-center justify-between bg-[#F9FAFB] rounded-xl px-4 py-3 border border-[#F3F4F6]">
@@ -240,17 +345,25 @@ export default function LiveSession({ boats, athletes, publishData, onSaveSessio
               })}
             </div>
           </div>
-          <div className="flex gap-3">
-            <button onClick={handleNewSession}
-              className="flex-1 py-3.5 rounded-xl bg-[#F3F4F6] text-[#374151] font-semibold text-sm hover:bg-[#E5E7EB] transition-colors active:scale-95">
-              New Session
-            </button>
-            <button onClick={handleSave}
-              className="flex-1 py-3.5 rounded-xl bg-[#16A34A] text-white font-bold text-sm hover:bg-green-700 transition-colors active:scale-[0.98] shadow-sm">
-              Save Results →
-            </button>
-          </div>
         </div>
+      )}
+
+      {/* Global Complete Session */}
+      {allRunsFinished && (
+        <div className="mt-auto shrink-0 pb-6 pt-4 border-t border-[#E5E7EB]">
+          <button onClick={handleCompleteSession} className="w-full py-4 rounded-xl bg-[#16A34A] text-white font-bold text-lg hover:bg-green-700 transition-colors shadow-lg active:scale-95 flex items-center justify-center gap-2">
+             ✓ Complete & Save Entire Session ({runs.length} {runs.length === 1 ? 'Run' : 'Runs'})
+          </button>
+        </div>
+      )}
+
+      {showSwapModal && (
+        <CreateRunSwapModal
+          initialBoats={boats}
+          athletes={athletes}
+          onClose={() => setShowSwapModal(false)}
+          onCreate={handleCreateRun}
+        />
       )}
     </div>
   );
