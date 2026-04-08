@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { parseCSV } from '../utils/helpers';
 
-export default function CSVUpload({ onImport, onLoadSample }) {
+export default function CSVUpload({ onImport }) {
   const [preview, setPreview] = useState(null);
   const [fileName, setFileName] = useState('');
   const [batchName, setBatchName] = useState('');
@@ -56,12 +56,6 @@ export default function CSVUpload({ onImport, onLoadSample }) {
           Choose CSV File
         </button>
 
-        <button
-          onClick={onLoadSample}
-          className="text-[#6B7280] text-sm hover:text-[#2563EB] transition-colors"
-        >
-          Load sample roster
-        </button>
       </div>
 
       {/* Preview Modal */}

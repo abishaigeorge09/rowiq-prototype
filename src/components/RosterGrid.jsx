@@ -58,29 +58,26 @@ export default function RosterGrid({ athletes, boats, onImport, onLoadSample, is
     <>
       <div className="bg-white border border-[#E5E7EB] rounded-xl">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-[#F3F4F6]">
-          <div className="flex items-center gap-3">
-            <span className="text-[#9CA3AF] text-xs font-semibold tracking-wider uppercase">Roster</span>
-            <span className="text-[#6B7280] text-sm">{assignedCount}/{athletes.length} assigned</span>
+        <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-[#F3F4F6]">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-[#9CA3AF] text-xs font-semibold tracking-wider uppercase shrink-0">Roster</span>
+            <span className="text-[#9CA3AF] text-xs">{assignedCount}/{athletes.length}</span>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 shrink-0">
             <input ref={fileRef} type="file" accept=".csv" onChange={handleReuploadFile} className="hidden" />
+            {/* Template download — icon only on mobile */}
             <button
               onClick={downloadTemplate}
-              className="text-[#9CA3AF] text-xs font-medium hover:text-[#6B7280] transition-colors"
+              className="text-[#9CA3AF] hover:text-[#6B7280] transition-colors px-2 py-1.5 rounded-lg hover:bg-[#F3F4F6]"
               title="Download CSV template"
             >
-              ↓ Template
-            </button>
-            <button
-              onClick={onLoadSample}
-              className="text-[#6B7280] text-xs font-medium hover:text-[#2563EB] transition-colors"
-            >
-              Load Sample
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
             </button>
             <button
               onClick={() => fileRef.current?.click()}
-              className="text-[#6B7280] text-xs font-medium hover:text-[#2563EB] transition-colors"
+              className="text-[#6B7280] text-xs font-medium hover:text-[#2563EB] transition-colors px-2 py-1.5 rounded-lg hover:bg-[#F3F4F6] hidden sm:block"
             >
               Upload CSV
             </button>
