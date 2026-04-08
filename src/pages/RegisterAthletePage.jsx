@@ -3,17 +3,13 @@ import { useNavigate, Link } from 'react-router-dom';
 import { IS_SUPABASE, supabase } from '../lib/supabase';
 import { useAuthStore } from '../stores/authStore';
 
-const inputCls = 'w-full bg-white border border-[#E5E7EB] focus:border-[#2563EB] text-white placeholder:text-[#9CA3AF] rounded-xl h-11 px-4 outline-none transition-colors text-sm';
-const labelCls = 'text-[10px] uppercase tracking-widest text-[#6B7280] font-bold block mb-1.5';
+const inputCls = 'w-full bg-white/5 border border-white/10 focus:border-[#2563EB] text-white placeholder:text-white/30 rounded-xl h-11 px-4 outline-none transition-colors text-sm';
+const labelCls = 'text-[10px] uppercase tracking-widest text-white/40 font-bold block mb-1.5';
 
 const BG = (
   <div className="absolute inset-0 z-0 pointer-events-none">
-    <div className="absolute top-1/4 left-1/4 w-[400px] h-[400px] bg-[#2563EB]/[0.05] blur-[120px] rounded-full" />
-    <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-[#2563EB]/[0.03] blur-[150px] rounded-full" />
-    <div className="absolute inset-0 opacity-[0.02]" style={{
-      backgroundImage: 'linear-gradient(rgba(255,255,255,0.8) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.8) 1px, transparent 1px)',
-      backgroundSize: '60px 60px',
-    }} />
+    <div className="absolute top-1/4 left-1/4 w-[400px] h-[400px] bg-[#2563EB]/[0.07] blur-[120px] rounded-full" />
+    <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-[#2563EB]/[0.04] blur-[150px] rounded-full" />
   </div>
 );
 
@@ -142,12 +138,12 @@ export default function RegisterAthletePage() {
   const stepIdx = steps.indexOf(step);
 
   return (
-    <div className="relative min-h-dvh bg-[#F7F8FA] flex flex-col text-[#111827] overflow-hidden">
+    <div className="relative min-h-dvh bg-[#0B1120] flex flex-col text-white overflow-hidden">
       {BG}
       <div className="relative z-10 flex-1 flex flex-col">
         {/* Top nav */}
         <div className="flex items-center gap-3 px-6 pt-6 pb-4 border-b border-[#E5E7EB]">
-          <Link to="/login" className="text-[#6B7280] hover:text-[#111827] transition-colors bg-[#F3F4F6] p-2 rounded-xl">
+          <Link to="/login" className="text-white/40 hover:text-white/80 transition-colors bg-white/5 p-2 rounded-xl">
             ←
           </Link>
           <div className="flex items-center gap-1">
@@ -160,7 +156,7 @@ export default function RegisterAthletePage() {
           {/* Progress */}
           <div className="flex gap-2 mb-8">
             {steps.map((s, i) => (
-              <div key={s} className={`flex-1 h-1 rounded-full transition-all duration-500 ${i <= stepIdx ? 'bg-white' : 'bg-white/10'}`} />
+              <div key={s} className={`flex-1 h-1 rounded-full transition-all duration-500 ${i <= stepIdx ? 'bg-[#2563EB]' : 'bg-white/10'}`} />
             ))}
           </div>
 
@@ -169,7 +165,7 @@ export default function RegisterAthletePage() {
             <form onSubmit={handleInviteCheck} className="space-y-5">
               <div>
                 <h2 className="text-xl font-black text-white mb-1">Join your team</h2>
-                <p className="text-[#6B7280] text-sm">Step 1 of 3 — Enter your team invite code</p>
+                <p className="text-white/40 text-sm">Step 1 of 3 — Enter your team invite code</p>
               </div>
               <div>
                 <label className={labelCls}>Invite Code</label>
@@ -181,12 +177,12 @@ export default function RegisterAthletePage() {
                   required
                 />
                 {inviteError && (
-                  <p className="text-red-400 text-xs mt-2">{inviteError}</p>
+                  <p className="text-red-300 text-xs mt-2">{inviteError}</p>
                 )}
-                <p className="text-[#9CA3AF] text-xs mt-2">Ask your coach for the invite code.</p>
+                <p className="text-white/30 text-xs mt-2">Ask your coach for the invite code.</p>
               </div>
               <button type="submit"
-                className="w-full bg-white text-[#0B1120] font-bold uppercase tracking-widest rounded-xl h-11 text-xs hover:bg-gray-100 transition-all">
+                className="w-full bg-[#2563EB] text-white font-bold rounded-xl h-11 text-sm hover:bg-[#1d4ed8] transition-all">
                 Verify Code →
               </button>
             </form>
@@ -205,7 +201,7 @@ export default function RegisterAthletePage() {
             }} className="space-y-5">
               <div>
                 <h2 className="text-xl font-black text-white mb-1">Create your account</h2>
-                <p className="text-[#6B7280] text-sm">
+                <p className="text-white/40 text-sm">
                   Step 2 of 3 — Joining <span className="text-white font-semibold">{resolvedTeamName}</span>
                 </p>
               </div>
@@ -230,17 +226,15 @@ export default function RegisterAthletePage() {
                   onChange={(e) => setField('confirmPassword', e.target.value)} minLength={8} required />
               </div>
               {error && (
-                <div className="bg-red-950/30 border border-red-500/20 rounded-xl px-4 py-3 text-red-300 text-xs">
-                  {error}
-                </div>
+                <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 text-red-300 text-xs">{error}</div>
               )}
               <div className="flex gap-3">
                 <button type="button" onClick={() => setStep('invite')}
-                  className="flex-1 border border-[#E5E7EB] bg-white text-[#6B7280] font-bold uppercase tracking-widest rounded-xl h-11 text-xs hover:text-[#111827] transition-all">
+                  className="flex-1 border border-white/10 bg-white/5 text-white/50 font-semibold rounded-xl h-11 text-sm hover:text-white transition-all">
                   Back
                 </button>
                 <button type="submit"
-                  className="flex-1 bg-white text-[#0B1120] font-bold uppercase tracking-widest rounded-xl h-11 text-xs hover:bg-gray-100 transition-all">
+                  className="flex-1 bg-[#2563EB] text-white font-bold rounded-xl h-11 text-sm hover:bg-[#1d4ed8] transition-all">
                   Continue →
                 </button>
               </div>
@@ -252,7 +246,7 @@ export default function RegisterAthletePage() {
             <form onSubmit={handleFinish} className="space-y-5">
               <div>
                 <h2 className="text-xl font-black text-white mb-1">Your rowing profile</h2>
-                <p className="text-[#6B7280] text-sm">Step 3 of 3 — Position preference</p>
+                <p className="text-white/40 text-sm">Step 3 of 3 — Position preference</p>
               </div>
               <div>
                 <label className={labelCls}>Preferred Position</label>
@@ -265,7 +259,7 @@ export default function RegisterAthletePage() {
                       className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors ${
                         form.position === pos
                           ? 'bg-[#2563EB] text-white'
-                          : 'bg-[#F3F4F6] text-[#6B7280] hover:text-[#111827] border border-[#E5E7EB]'
+                          : 'bg-white/5 text-white/50 hover:text-white border border-white/10'
                       }`}
                     >
                       {pos}
@@ -289,29 +283,27 @@ export default function RegisterAthletePage() {
                       className={`flex-1 py-2.5 rounded-xl text-xs font-medium transition-colors ${
                         form.oarSide === value
                           ? 'bg-[#2563EB] text-white'
-                          : 'bg-[#F3F4F6] text-[#6B7280] hover:text-[#111827] border border-[#E5E7EB]'
+                          : 'bg-white/5 text-white/50 hover:text-white border border-white/10'
                       }`}
                     >
                       {label}
                     </button>
                   ))}
                 </div>
-                <p className="text-[#9CA3AF] text-xs mt-1.5">Which side of the boat do you prefer to row?</p>
+                <p className="text-white/30 text-xs mt-1.5">Which side of the boat do you prefer to row?</p>
               </div>
 
               {error && (
-                <div className="bg-red-950/30 border border-red-500/20 rounded-xl px-4 py-3 text-red-300 text-xs">
-                  {error}
-                </div>
+                <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 text-red-300 text-xs">{error}</div>
               )}
 
               <div className="flex gap-3">
                 <button type="button" onClick={() => setStep('account')}
-                  className="flex-1 border border-[#E5E7EB] bg-white text-[#6B7280] font-bold uppercase tracking-widest rounded-xl h-11 text-xs hover:text-[#111827] transition-all">
+                  className="flex-1 border border-white/10 bg-white/5 text-white/50 font-semibold rounded-xl h-11 text-sm hover:text-white transition-all">
                   Back
                 </button>
                 <button type="submit" disabled={loading}
-                  className="flex-1 bg-white text-[#0B1120] font-bold uppercase tracking-widest rounded-xl h-11 text-xs hover:bg-gray-100 disabled:opacity-50 transition-all">
+                  className="flex-1 bg-[#2563EB] text-white font-bold rounded-xl h-11 text-sm hover:bg-[#1d4ed8] disabled:opacity-50 transition-all">
                   {loading ? 'Creating…' : 'Join Team →'}
                 </button>
               </div>

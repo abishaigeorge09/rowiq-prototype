@@ -25,11 +25,11 @@ export default function Header({
   const isAthlete = user?.role === 'athlete';
 
   return (
-    <header className="sticky top-0 z-50 bg-white border-b border-[#E5E7EB]">
+    <header className="sticky top-0 z-50 bg-[#0B1120]">
       <div className="flex items-center justify-between px-4 sm:px-6 h-14">
         {/* Logo */}
         <div className="flex items-center gap-0.5 shrink-0">
-          <span className="text-lg font-black text-[#111827] tracking-tight">ROW</span>
+          <span className="text-lg font-black text-white tracking-tight">ROW</span>
           <span className="text-lg font-black text-[#2563EB] tracking-tight">IQ</span>
         </div>
 
@@ -46,13 +46,13 @@ export default function Header({
 
           {!isGuest && isAthlete && (
             <>
-              <span className="hidden sm:inline text-[#6B7280] text-sm font-medium">
+              <span className="hidden sm:inline text-white/60 text-sm font-medium">
                 {user.name}
               </span>
               <button
                 onClick={handleSignOut}
                 title="Sign out"
-                className="w-9 h-9 flex items-center justify-center rounded-lg text-[#6B7280] hover:text-[#DC2626] hover:bg-red-50 transition-colors"
+                className="w-9 h-9 flex items-center justify-center rounded-lg text-white/40 hover:text-white/80 hover:bg-white/10 transition-colors"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
@@ -66,6 +66,7 @@ export default function Header({
           {!isGuest && !isAthlete && (
             <>
               <ViewToggle
+                variant="dark"
                 viewMode={viewMode}
                 viewingAthlete={viewingAthlete}
                 athletes={athletes}
@@ -75,7 +76,7 @@ export default function Header({
               <button
                 onClick={handleSignOut}
                 title="Sign out"
-                className="w-9 h-9 flex items-center justify-center rounded-lg text-[#6B7280] hover:text-[#DC2626] hover:bg-red-50 transition-colors"
+                className="w-9 h-9 flex items-center justify-center rounded-lg text-white/40 hover:text-white/80 hover:bg-white/10 transition-colors"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
@@ -90,7 +91,7 @@ export default function Header({
 
       {/* Tabs — only show in coach view */}
       {viewMode === 'coach' && !isAthlete && (
-        <div className="flex items-center gap-0 px-4 sm:px-6 overflow-x-auto scrollbar-none border-t border-[#F3F4F6]">
+        <div className="flex items-center gap-0 px-4 sm:px-6 overflow-x-auto scrollbar-none border-t border-white/10">
           {tabs.map((tab) => (
             <button
               key={tab.id}
@@ -98,10 +99,10 @@ export default function Header({
               disabled={tab.disabled}
               className={`text-sm font-medium px-4 py-3 border-b-2 transition-all whitespace-nowrap shrink-0 ${
                 screen === tab.id
-                  ? 'text-[#2563EB] border-[#2563EB]'
+                  ? 'text-white border-[#2563EB]'
                   : tab.disabled
-                  ? 'text-[#D1D5DB] border-transparent cursor-not-allowed'
-                  : 'text-[#6B7280] border-transparent hover:text-[#111827]'
+                  ? 'text-white/20 border-transparent cursor-not-allowed'
+                  : 'text-white/50 border-transparent hover:text-white/80'
               }`}
             >
               {tab.label}
@@ -111,9 +112,9 @@ export default function Header({
       )}
 
       {viewMode === 'athlete' && viewingAthlete && (
-        <div className="hidden sm:flex items-center gap-3 px-6 py-2 border-t border-[#F3F4F6]">
-          <span className="text-[#9CA3AF] text-xs font-semibold tracking-wider uppercase">Viewing as</span>
-          <span className="text-[#111827] text-sm font-medium">{viewingAthlete.name}</span>
+        <div className="hidden sm:flex items-center gap-3 px-6 py-2 border-t border-white/10">
+          <span className="text-white/40 text-xs font-semibold tracking-wider uppercase">Viewing as</span>
+          <span className="text-white/80 text-sm font-medium">{viewingAthlete.name}</span>
         </div>
       )}
     </header>

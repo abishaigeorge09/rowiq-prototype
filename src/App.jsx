@@ -14,7 +14,7 @@ import AthleteView from './components/AthleteView';
 import SignInModal from './components/SignInModal';
 import PairsManager from './components/PairsManager';
 import PerformanceDashboard from './components/PerformanceDashboard';
-import { createAthlete, createBoat, SAMPLE_ATHLETES, getTotalAssigned, generateId, getInitials, getAvatarColor } from './utils/helpers';
+import { createAthlete, createBoat, SAMPLE_ATHLETES, getTotalAssigned, generateId, getInitials, getAvatarColor, parseSessionsCSV } from './utils/helpers';
 import { useAuthStore } from './stores/authStore.js';
 import { useRosterStore } from './stores/rosterStore.js';
 import { supabase, IS_SUPABASE } from './lib/supabase.js';
@@ -308,6 +308,13 @@ function reducer(state, action) {
       return { ...state, pairs: state.pairs.filter((p) => p.id !== action.payload) };
     }
 
+    case 'IMPORT_SESSIONS': {
+      // Merge imported sessions into publishedLineups (avoid duplicates by id)
+      const existing = new Set(state.publishedLineups.map((l) => l.id));
+      const newOnes = action.payload.filter((l) => !existing.has(l.id));
+      return { ...state, publishedLineups: [...state.publishedLineups, ...newOnes] };
+    }
+
     default:
       return state;
   }
@@ -411,13 +418,29 @@ export default function App() {
     }
   }, [user?.role, user?.athlete_id]);
 
-  // ── Seed athletes from rosterStore on mount (guest persistence) ─────────
+  // ── Seed athletes from rosterStore on mount (guest or new coach) ─────────
   useEffect(() => {
-    if (!user && rosterAthletes.length > 0 && athletes.length === 0) {
+    const isNewCoach = user && !IS_SUPABASE && user.team_id !== 'demo-team-1';
+    const isGuest = !user;
+    if ((isGuest || isNewCoach) && rosterAthletes.length > 0 && athletes.length === 0) {
       dispatch({ type: 'IMPORT_ATHLETES', payload: rosterAthletes });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rosterAthletes.length]);
+  }, [rosterAthletes.length, user?.team_id]);
+
+  // ── Load sessions imported during onboarding (via sessionStorage) ────────
+  useEffect(() => {
+    const raw = sessionStorage.getItem('rowiq_import_sessions');
+    if (!raw) return;
+    try {
+      const sessions = JSON.parse(raw);
+      if (sessions?.length) {
+        dispatch({ type: 'IMPORT_SESSIONS', payload: sessions });
+      }
+    } catch (_) { /* ignore */ }
+    sessionStorage.removeItem('rowiq_import_sessions');
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ── Supabase: sync lineup state after changes (debounced) ──
   useEffect(() => {

@@ -49,12 +49,21 @@ export default function BoatCard({
 
   const currentTypeLabel = BOAT_TYPES.find((t) => t.size === boat.size)?.label ?? `${boat.size}`;
 
+  const isFull = assignedCount === boat.size;
+  const hasAny = assignedCount > 0;
+
   return (
     <>
       <div
-        className="bg-white border border-[#E5E7EB] rounded-xl p-4 shrink-0 flex flex-col"
+        className="bg-white border border-[#E5E7EB] rounded-xl p-4 shrink-0 flex flex-col relative overflow-hidden"
         style={{ width: 360, minHeight: 300 }}
       >
+        {/* Assignment status stripe at top */}
+        {hasAny && (
+          <div
+            className={`absolute top-0 left-0 right-0 h-0.5 ${isFull ? 'bg-[#16A34A]' : 'bg-[#2563EB]'}`}
+          />
+        )}
         {/* Header row */}
         <div className="flex items-center justify-between mb-3">
           <div>

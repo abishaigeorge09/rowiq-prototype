@@ -4,7 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { getAvatarColor } from '../utils/helpers';
 import { useAuthStore } from '../stores/authStore.js';
 
-export default function ViewToggle({ viewMode, viewingAthlete, athletes, onSwitchToAthlete, onSwitchToCoach }) {
+export default function ViewToggle({ viewMode, viewingAthlete, athletes, onSwitchToAthlete, onSwitchToCoach, variant }) {
+  const isDark = variant === 'dark';
   const navigate = useNavigate();
   const { signOut, user } = useAuthStore();
   const [open, setOpen] = useState(false);
@@ -104,7 +105,11 @@ export default function ViewToggle({ viewMode, viewingAthlete, athletes, onSwitc
         {/* Toggle button */}
         <button
           onClick={() => setOpen(!open)}
-          className="flex items-center gap-2 bg-[#F3F4F6] border border-[#E5E7EB] rounded-lg px-3 py-1.5 hover:border-[#D1D5DB] transition-colors"
+          className={`flex items-center gap-2 rounded-lg px-3 py-1.5 transition-colors ${
+            isDark
+              ? 'bg-white/10 border border-white/15 hover:bg-white/15'
+              : 'bg-[#F3F4F6] border border-[#E5E7EB] hover:border-[#D1D5DB]'
+          }`}
         >
           {viewMode === 'athlete' && viewingAthlete ? (
             <>
@@ -114,16 +119,16 @@ export default function ViewToggle({ viewMode, viewingAthlete, athletes, onSwitc
               >
                 {viewingAthlete.initials}
               </div>
-              <span className="text-[#111827] text-sm truncate max-w-[100px]">
+              <span className={`text-sm truncate max-w-[100px] ${isDark ? 'text-white' : 'text-[#111827]'}`}>
                 {viewingAthlete.name.split(' ')[0]}
               </span>
             </>
           ) : (
-            <span className="text-[#111827] text-sm">Coach View</span>
+            <span className={`text-sm ${isDark ? 'text-white/80' : 'text-[#111827]'}`}>Coach View</span>
           )}
           <svg
             width="12" height="12" viewBox="0 0 12 12"
-            className={`text-[#6B7280] transition-transform shrink-0 ${open ? 'rotate-180' : ''}`}
+            className={`transition-transform shrink-0 ${open ? 'rotate-180' : ''} ${isDark ? 'text-white/40' : 'text-[#6B7280]'}`}
             fill="currentColor"
           >
             <path d="M6 8L1 3h10L6 8z" />
