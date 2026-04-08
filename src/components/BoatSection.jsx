@@ -2,7 +2,9 @@ import { useRef, useState } from 'react';
 import BoatCard from './BoatCard';
 
 export default function BoatSection({
-  boats, athletes, onToggleSize, onRemove, published, onAddBoat, onTapSelect, onFillSeats
+  boats, athletes, onToggleSize, onRemove, published, onAddBoat, onTapSelect, onFillSeats,
+  pairs, onShowPairs,
+  swapMode, swapSource, onSwapSelect, onRearrange,
 }) {
   const scrollRef = useRef(null);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -23,17 +25,38 @@ export default function BoatSection({
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-3">
           <span className="text-[#9CA3AF] text-xs font-semibold tracking-wider uppercase">Boats</span>
-          {!published && (
+          {!published && !swapMode && (
+            <>
+              <button
+                onClick={onAddBoat}
+                className="text-[#2563EB] text-xs font-semibold hover:text-[#1d4ed8] transition-colors"
+              >
+                + Add Shell
+              </button>
+              <button
+                onClick={onShowPairs}
+                className="text-[#6B7280] text-xs font-semibold hover:text-[#111827] transition-colors"
+              >
+                ⛓ Pairs
+              </button>
+            </>
+          )}
+          {published && !swapMode && (
             <button
-              onClick={onAddBoat}
-              className="text-[#2563EB] text-xs font-semibold hover:text-[#1d4ed8] transition-colors"
+              onClick={onRearrange}
+              className="flex items-center gap-1 text-xs font-semibold text-[#2563EB] hover:text-[#1d4ed8] transition-colors bg-[#EFF6FF] px-2.5 py-1 rounded-lg"
             >
-              + Add Shell
+              🔀 Rearrange
             </button>
+          )}
+          {swapMode && (
+            <span className="text-xs font-semibold text-[#2563EB] bg-[#EFF6FF] px-2.5 py-1 rounded-lg animate-pulse">
+              Swap Mode — tap two athletes to swap
+            </span>
           )}
         </div>
 
-        {/* Navigation */}
+        {/* Navigation dots + arrows */}
         <div className="flex items-center gap-2">
           <button
             onClick={() => scrollTo('left')}
@@ -75,6 +98,10 @@ export default function BoatSection({
               published={published}
               onTapSelect={onTapSelect}
               onFillSeats={onFillSeats}
+              pairs={pairs}
+              swapMode={swapMode}
+              swapSource={swapSource}
+              onSwapSelect={onSwapSelect}
             />
           </div>
         ))}

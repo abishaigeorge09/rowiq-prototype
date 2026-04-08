@@ -1,7 +1,21 @@
 import { useDraggable } from '@dnd-kit/core';
 import { getAvatarColor } from '../utils/helpers';
 
-export default function AthleteChip({ athlete, isAssigned }) {
+function OarDots({ oarSide }) {
+  if (!oarSide) return null;
+  return (
+    <div className="flex items-center gap-0.5 ml-1">
+      {(oarSide === 'port' || oarSide === 'both') && (
+        <span className="w-2 h-2 rounded-full bg-[#16A34A] block" title="Port" />
+      )}
+      {(oarSide === 'starboard' || oarSide === 'both') && (
+        <span className="w-2 h-2 rounded-full bg-[#DC2626] block" title="Starboard" />
+      )}
+    </div>
+  );
+}
+
+export default function AthleteChip({ athlete, isAssigned, inPair }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: athlete.id,
     disabled: isAssigned,
@@ -26,9 +40,13 @@ export default function AthleteChip({ athlete, isAssigned }) {
       >
         {athlete.initials}
       </div>
-      <div className="min-w-0">
+      <div className="min-w-0 flex-1">
         <div className="text-[#111827] text-sm font-medium truncate">{athlete.name}</div>
-        <div className="text-[#9CA3AF] text-xs">{athlete.position}</div>
+        <div className="flex items-center gap-1 text-[#9CA3AF] text-xs">
+          <span>{athlete.position}</span>
+          <OarDots oarSide={athlete.oarSide} />
+          {inPair && <span title="In a pair" className="text-[#6B7280]">⛓</span>}
+        </div>
       </div>
     </div>
   );

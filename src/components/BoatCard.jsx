@@ -3,64 +3,34 @@ import SeatCircle from './SeatCircle';
 import FillBoatSheet from './FillBoatSheet';
 import { getAssignedCount } from '../utils/helpers';
 
-function RowingShellSVG({ size }) {
-  const width = 340;
-  const seatCount = size;
-  const hullPadding = 18;
-  const seatSpacing = (width - hullPadding * 2) / (seatCount + 1);
+// Boat type options mapped to seat count
+const BOAT_TYPES = [
+  { label: '1x', size: 1 },
+  { label: '2x', size: 2 },
+  { label: '4+', size: 4 },
+  { label: '8+', size: 8 },
+];
 
+// Top-down hull SVG — slim vertical strip
+function HullSVG() {
   return (
-    <svg viewBox={`0 0 ${width} 60`} className="w-full h-auto my-2 opacity-70">
-      {/* Hull */}
+    <svg viewBox="0 0 24 120" className="w-6 h-full opacity-50" preserveAspectRatio="none">
       <path
-        d={`M ${hullPadding + 8} 30
-            Q ${hullPadding - 5} 30, ${hullPadding - 2} 27
-            L ${hullPadding + 2} 23
-            Q ${hullPadding + 5} 20, ${hullPadding + 15} 20
-            L ${width - hullPadding - 15} 20
-            Q ${width - hullPadding - 5} 20, ${width - hullPadding} 25
-            L ${width - hullPadding + 3} 30
-            Q ${width - hullPadding} 35, ${width - hullPadding - 5} 40
-            L ${width - hullPadding - 15} 40
-            L ${hullPadding + 15} 40
-            Q ${hullPadding + 5} 40, ${hullPadding} 35
-            L ${hullPadding - 2} 33
-            Q ${hullPadding - 5} 30, ${hullPadding + 8} 30 Z`}
-        fill="rgba(37,99,235,0.05)"
+        d="M 4 8 Q 2 10 2 12 L 2 108 Q 2 110 4 112 L 12 118 L 20 112 Q 22 110 22 108 L 22 12 Q 22 10 20 8 L 12 3 Z"
+        fill="rgba(37,99,235,0.06)"
         stroke="#D1D5DB"
         strokeWidth="1.2"
       />
-      <line x1={hullPadding + 15} y1="30" x2={width - hullPadding - 10} y2="30" stroke="#E5E7EB" strokeWidth="0.75" />
-      {/* Rudder */}
-      <polygon
-        points={`${hullPadding - 3},27 ${hullPadding - 8},30 ${hullPadding - 3},33`}
-        fill="none"
-        stroke="#D1D5DB"
-        strokeWidth="0.75"
-      />
-      {/* Seats + oars */}
-      {Array.from({ length: seatCount }).map((_, i) => {
-        const cx = hullPadding + seatSpacing * (i + 1);
-        const isPort = i % 2 === 0;
-        const oarY = isPort ? 17 : 43;
-        const oarEndY = isPort ? 7 : 53;
-        return (
-          <g key={i}>
-            <circle cx={cx} cy="30" r="3" fill="none" stroke="#9CA3AF" strokeWidth="1" />
-            <line x1={cx} y1={oarY} x2={cx + (isPort ? -5 : 5)} y2={oarEndY} stroke="#E5E7EB" strokeWidth="0.75" />
-            <ellipse
-              cx={cx + (isPort ? -6 : 6)} cy={oarEndY + (isPort ? -1 : 1)}
-              rx="1.8" ry="3.5" fill="none" stroke="#E5E7EB" strokeWidth="0.5"
-              transform={`rotate(${isPort ? -15 : 15}, ${cx + (isPort ? -6 : 6)}, ${oarEndY + (isPort ? -1 : 1)})`}
-            />
-          </g>
-        );
-      })}
+      <line x1="12" y1="8" x2="12" y2="112" stroke="#E5E7EB" strokeWidth="0.75" />
     </svg>
   );
 }
 
-export default function BoatCard({ boat, athletes, onToggleSize, onRemove, published, onTapSelect, onFillSeats }) {
+export default function BoatCard({
+  boat, athletes, onToggleSize, onRemove, published, onTapSelect, onFillSeats,
+  pairs,
+  swapMode, swapSource, onSwapSelect,
+}) {
   const [showFillSheet, setShowFillSheet] = useState(false);
   const assignedCount = getAssignedCount(boat);
   const openSeats = boat.seats.filter((s) => !s.athleteId);
@@ -70,17 +40,25 @@ export default function BoatCard({ boat, athletes, onToggleSize, onRemove, publi
     return athletes.find((a) => a.id === seat.athleteId) || null;
   }
 
-  // Split seats into rows for uniform layout
-  const topRow = boat.seats.slice(0, 4);
-  const bottomRow = boat.size === 8 ? boat.seats.slice(4) : [];
+  // Split seats: even → port (left), odd → starboard (right)
+  const portSeats = boat.seats.filter((s) => s.seatNum % 2 === 0).sort((a, b) => a.seatNum - b.seatNum);
+  const stbdSeats = boat.seats.filter((s) => s.seatNum % 2 !== 0).sort((a, b) => a.seatNum - b.seatNum);
+
+  // For 1-seat: just render a single centered seat
+  const isSingle = boat.size === 1;
+
+  const currentTypeLabel = BOAT_TYPES.find((t) => t.size === boat.size)?.label ?? `${boat.size}`;
 
   return (
     <>
-      <div className="bg-white border border-[#E5E7EB] rounded-xl p-4 w-[360px] shrink-0 flex flex-col" style={{ minHeight: 300 }}>
-        {/* Header */}
-        <div className="flex items-center justify-between mb-1">
+      <div
+        className="bg-white border border-[#E5E7EB] rounded-xl p-4 shrink-0 flex flex-col"
+        style={{ width: 360, minHeight: 300 }}
+      >
+        {/* Header row */}
+        <div className="flex items-center justify-between mb-3">
           <div>
-            <h3 className="text-[#111827] font-semibold text-base">
+            <h3 className="text-[#111827] font-semibold text-base leading-tight">
               {boat.name}
               {published && <span className="ml-2 text-[#16A34A] text-xs font-medium">Published ✓</span>}
             </h3>
@@ -88,8 +66,8 @@ export default function BoatCard({ boat, athletes, onToggleSize, onRemove, publi
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Fill Boat button */}
-            {!published && openSeats.length > 0 && athletes.length > 0 && (
+            {/* Fill button */}
+            {!published && !swapMode && openSeats.length > 0 && athletes.length > 0 && (
               <button
                 onClick={() => setShowFillSheet(true)}
                 className="px-3 py-1 rounded-lg bg-[#EFF6FF] text-[#2563EB] text-xs font-semibold hover:bg-blue-100 transition-colors"
@@ -98,72 +76,116 @@ export default function BoatCard({ boat, athletes, onToggleSize, onRemove, publi
               </button>
             )}
 
-            {/* Size toggle */}
-            {!published && (
+            {/* Boat type toggle */}
+            {!published && !swapMode && (
               <div className="flex bg-[#F3F4F6] rounded-lg p-0.5">
-                <button
-                  onClick={() => onToggleSize(boat.id, 4)}
-                  className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-colors ${
-                    boat.size === 4 ? 'bg-white text-[#2563EB] shadow-sm' : 'text-[#6B7280] hover:text-[#111827]'
-                  }`}
-                >
-                  4×
-                </button>
-                <button
-                  onClick={() => onToggleSize(boat.id, 8)}
-                  className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-colors ${
-                    boat.size === 8 ? 'bg-white text-[#2563EB] shadow-sm' : 'text-[#6B7280] hover:text-[#111827]'
-                  }`}
-                >
-                  8×
-                </button>
+                {BOAT_TYPES.map(({ label, size }) => (
+                  <button
+                    key={label}
+                    onClick={() => onToggleSize(boat.id, size)}
+                    className={`px-2 py-1 rounded-md text-xs font-semibold transition-colors ${
+                      boat.size === size
+                        ? 'bg-white text-[#2563EB] shadow-sm'
+                        : 'text-[#6B7280] hover:text-[#111827]'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
               </div>
+            )}
+
+            {/* Show type label when published */}
+            {(published || swapMode) && (
+              <span className="text-[#9CA3AF] text-xs font-semibold bg-[#F3F4F6] px-2 py-1 rounded-lg">
+                {currentTypeLabel}
+              </span>
             )}
           </div>
         </div>
 
-        {/* SVG Hull */}
-        <RowingShellSVG size={boat.size} />
-
-        {/* Seat grid — 2 rows for 8-seat, 1 row for 4-seat */}
-        <div className="flex flex-col gap-3 flex-1 justify-center mt-1">
-          {/* Top row (seats 1-4) */}
-          <div className="flex gap-2 justify-center">
-            {topRow.map((seat) => (
-              <SeatCircle
-                key={seat.seatNum}
-                seat={seat}
-                boatId={boat.id}
-                athlete={getAthleteForSeat(seat)}
-                onRemove={(seatNum) => onRemove(boat.id, seatNum)}
-                published={published}
-                onTapSelect={(seatNum) => onTapSelect && onTapSelect(boat.id, seatNum)}
-              />
-            ))}
+        {/* Port / Starboard split layout */}
+        {isSingle ? (
+          /* Single scull — just center the one seat */
+          <div className="flex-1 flex items-center justify-center">
+            <SeatCircle
+              seat={boat.seats[0]}
+              boatId={boat.id}
+              athlete={getAthleteForSeat(boat.seats[0])}
+              onRemove={(seatNum) => onRemove(boat.id, seatNum)}
+              published={published}
+              onTapSelect={(seatNum) => onTapSelect && onTapSelect(boat.id, seatNum)}
+              swapMode={swapMode}
+              swapSource={swapSource}
+              onSwapSelect={onSwapSelect}
+              isPortSide={false}
+            />
           </div>
-          {/* Bottom row (seats 5-8, 8-seat only) */}
-          {bottomRow.length > 0 && (
-            <div className="flex gap-2 justify-center">
-              {bottomRow.map((seat) => (
-                <SeatCircle
-                  key={seat.seatNum}
-                  seat={seat}
-                  boatId={boat.id}
-                  athlete={getAthleteForSeat(seat)}
-                  onRemove={(seatNum) => onRemove(boat.id, seatNum)}
-                  published={published}
-                  onTapSelect={(seatNum) => onTapSelect && onTapSelect(boat.id, seatNum)}
-                />
-              ))}
+        ) : (
+          <div className="flex-1 flex gap-1 min-h-0">
+            {/* PORT column */}
+            <div className="flex flex-col flex-1 min-w-0">
+              <div className="flex items-center gap-1 mb-2">
+                <span className="w-2 h-2 rounded-full bg-[#16A34A] shrink-0" />
+                <span className="text-[#16A34A] text-[10px] font-bold tracking-widest uppercase">Port</span>
+              </div>
+              <div className="flex flex-col gap-2 items-center">
+                {portSeats.map((seat) => (
+                  <SeatCircle
+                    key={seat.seatNum}
+                    seat={seat}
+                    boatId={boat.id}
+                    athlete={getAthleteForSeat(seat)}
+                    onRemove={(seatNum) => onRemove(boat.id, seatNum)}
+                    published={published}
+                    onTapSelect={(seatNum) => onTapSelect && onTapSelect(boat.id, seatNum)}
+                    swapMode={swapMode}
+                    swapSource={swapSource}
+                    onSwapSelect={onSwapSelect}
+                    isPortSide={true}
+                  />
+                ))}
+              </div>
             </div>
-          )}
-        </div>
+
+            {/* Center hull */}
+            <div className="flex items-stretch justify-center w-8 shrink-0 py-6">
+              <HullSVG />
+            </div>
+
+            {/* STARBOARD column */}
+            <div className="flex flex-col flex-1 min-w-0">
+              <div className="flex items-center justify-end gap-1 mb-2">
+                <span className="text-[#DC2626] text-[10px] font-bold tracking-widest uppercase">Stbd</span>
+                <span className="w-2 h-2 rounded-full bg-[#DC2626] shrink-0" />
+              </div>
+              <div className="flex flex-col gap-2 items-center">
+                {stbdSeats.map((seat) => (
+                  <SeatCircle
+                    key={seat.seatNum}
+                    seat={seat}
+                    boatId={boat.id}
+                    athlete={getAthleteForSeat(seat)}
+                    onRemove={(seatNum) => onRemove(boat.id, seatNum)}
+                    published={published}
+                    onTapSelect={(seatNum) => onTapSelect && onTapSelect(boat.id, seatNum)}
+                    swapMode={swapMode}
+                    swapSource={swapSource}
+                    onSwapSelect={onSwapSelect}
+                    isPortSide={false}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {showFillSheet && (
         <FillBoatSheet
           boat={boat}
           athletes={athletes}
+          pairs={pairs}
           onFillSeats={(athleteIds) => {
             onFillSeats?.(boat.id, athleteIds);
             setShowFillSheet(false);

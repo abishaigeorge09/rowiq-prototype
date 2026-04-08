@@ -2,22 +2,22 @@
 // 30 sessions across Oct 2025 – Apr 2026, showing realistic season progression.
 
 export const DEMO_ATHLETES = [
-  { id: 'da-01', name: 'Alex Johnson',   email: 'alex.j@crew.edu',    position: 'Stroke', initials: 'AJ', colorIndex: 0 },
-  { id: 'da-02', name: 'Bella Martinez', email: 'bella.m@crew.edu',   position: 'Stroke', initials: 'BM', colorIndex: 1 },
-  { id: 'da-03', name: 'Chris Park',     email: 'chris.p@crew.edu',   position: 'Mid',    initials: 'CP', colorIndex: 2 },
-  { id: 'da-04', name: 'Dana Williams',  email: 'dana.w@crew.edu',    position: 'Mid',    initials: 'DW', colorIndex: 3 },
-  { id: 'da-05', name: 'Eli Thompson',   email: 'eli.t@crew.edu',     position: 'Mid',    initials: 'ET', colorIndex: 4 },
-  { id: 'da-06', name: 'Fiona Chen',     email: 'fiona.c@crew.edu',   position: 'Bow',    initials: 'FC', colorIndex: 5 },
-  { id: 'da-07', name: 'Gabe Rivera',    email: 'gabe.r@crew.edu',    position: 'Stroke', initials: 'GR', colorIndex: 6 },
-  { id: 'da-08', name: 'Hannah Lee',     email: 'hannah.l@crew.edu',  position: 'Bow',    initials: 'HL', colorIndex: 7 },
-  { id: 'da-09', name: 'Ivan Cruz',      email: 'ivan.c@crew.edu',    position: 'Mid',    initials: 'IC', colorIndex: 8 },
-  { id: 'da-10', name: 'Julia Santos',   email: 'julia.s@crew.edu',   position: 'Stroke', initials: 'JS', colorIndex: 9 },
-  { id: 'da-11', name: 'Kevin Marsh',    email: 'kevin.m@crew.edu',   position: 'Mid',    initials: 'KM', colorIndex: 10 },
-  { id: 'da-12', name: 'Laura Ngo',      email: 'laura.n@crew.edu',   position: 'Bow',    initials: 'LN', colorIndex: 11 },
-  { id: 'da-13', name: 'Marcus Webb',    email: 'marcus.w@crew.edu',  position: 'Mid',    initials: 'MW', colorIndex: 12 },
-  { id: 'da-14', name: 'Nina Torres',    email: 'nina.t@crew.edu',    position: 'Bow',    initials: 'NT', colorIndex: 13 },
-  { id: 'da-15', name: 'Owen Blake',     email: 'owen.b@crew.edu',    position: 'Stroke', initials: 'OB', colorIndex: 14 },
-  { id: 'da-16', name: 'Priya Shah',     email: 'priya.s@crew.edu',   position: 'Mid',    initials: 'PS', colorIndex: 15 },
+  { id: 'da-01', name: 'Alex Johnson',   email: 'alex.j@crew.edu',    position: 'Stroke', initials: 'AJ', colorIndex: 0,  oarSide: 'starboard' },
+  { id: 'da-02', name: 'Bella Martinez', email: 'bella.m@crew.edu',   position: 'Stroke', initials: 'BM', colorIndex: 1,  oarSide: 'port' },
+  { id: 'da-03', name: 'Chris Park',     email: 'chris.p@crew.edu',   position: 'Mid',    initials: 'CP', colorIndex: 2,  oarSide: 'starboard' },
+  { id: 'da-04', name: 'Dana Williams',  email: 'dana.w@crew.edu',    position: 'Mid',    initials: 'DW', colorIndex: 3,  oarSide: 'port' },
+  { id: 'da-05', name: 'Eli Thompson',   email: 'eli.t@crew.edu',     position: 'Mid',    initials: 'ET', colorIndex: 4,  oarSide: 'both' },
+  { id: 'da-06', name: 'Fiona Chen',     email: 'fiona.c@crew.edu',   position: 'Bow',    initials: 'FC', colorIndex: 5,  oarSide: 'port' },
+  { id: 'da-07', name: 'Gabe Rivera',    email: 'gabe.r@crew.edu',    position: 'Stroke', initials: 'GR', colorIndex: 6,  oarSide: 'starboard' },
+  { id: 'da-08', name: 'Hannah Lee',     email: 'hannah.l@crew.edu',  position: 'Bow',    initials: 'HL', colorIndex: 7,  oarSide: 'port' },
+  { id: 'da-09', name: 'Ivan Cruz',      email: 'ivan.c@crew.edu',    position: 'Mid',    initials: 'IC', colorIndex: 8,  oarSide: 'port' },
+  { id: 'da-10', name: 'Julia Santos',   email: 'julia.s@crew.edu',   position: 'Stroke', initials: 'JS', colorIndex: 9,  oarSide: 'starboard' },
+  { id: 'da-11', name: 'Kevin Marsh',    email: 'kevin.m@crew.edu',   position: 'Mid',    initials: 'KM', colorIndex: 10, oarSide: 'port' },
+  { id: 'da-12', name: 'Laura Ngo',      email: 'laura.n@crew.edu',   position: 'Bow',    initials: 'LN', colorIndex: 11, oarSide: 'both' },
+  { id: 'da-13', name: 'Marcus Webb',    email: 'marcus.w@crew.edu',  position: 'Mid',    initials: 'MW', colorIndex: 12, oarSide: 'starboard' },
+  { id: 'da-14', name: 'Nina Torres',    email: 'nina.t@crew.edu',    position: 'Bow',    initials: 'NT', colorIndex: 13, oarSide: 'port' },
+  { id: 'da-15', name: 'Owen Blake',     email: 'owen.b@crew.edu',    position: 'Stroke', initials: 'OB', colorIndex: 14, oarSide: 'starboard' },
+  { id: 'da-16', name: 'Priya Shah',     email: 'priya.s@crew.edu',   position: 'Mid',    initials: 'PS', colorIndex: 15, oarSide: 'port' },
 ];
 
 function a(id) { return DEMO_ATHLETES.find((x) => x.id === id); }

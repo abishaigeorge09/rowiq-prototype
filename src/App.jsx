@@ -11,6 +11,7 @@ import Results from './components/Results';
 import CoachRoster from './components/CoachRoster';
 import AthleteView from './components/AthleteView';
 import SignInModal from './components/SignInModal';
+import PairsManager from './components/PairsManager';
 import PerformanceDashboard from './components/PerformanceDashboard';
 import { createAthlete, createBoat, SAMPLE_ATHLETES, getTotalAssigned, generateId, getInitials, getAvatarColor } from './utils/helpers';
 import { useAuthStore } from './stores/authStore.js';
@@ -32,6 +33,7 @@ const initialState = {
   publishData: null,
   sessions: [],
   publishedLineups: [], // All published lineup snapshots — source of truth for history
+  pairs: [],
 };
 
 function snapshotLineup({ boats, athletes, publishData, lineupId }) {
@@ -54,7 +56,7 @@ function snapshotLineup({ boats, athletes, publishData, lineupId }) {
           .map((s) => {
             const a = athletes.find((at) => at.id === s.athleteId);
             if (!a) return null;
-            return { id: a.id, name: a.name, seatNum: s.seatNum, initials: a.initials, colorIndex: a.colorIndex, position: a.position };
+            return { id: a.id, name: a.name, seatNum: s.seatNum, initials: a.initials, colorIndex: a.colorIndex, position: a.position, oarSide: a.oarSide ?? null };
           })
           .filter(Boolean),
       })),
@@ -258,7 +260,7 @@ function reducer(state, action) {
     }
 
     case 'UPDATE_ATHLETE': {
-      const { id, name, email, position } = action.payload;
+      const { id, name, email, position, oarSide } = action.payload;
       return {
         ...state,
         athletes: state.athletes.map((a) => {
@@ -269,10 +271,40 @@ function reducer(state, action) {
             name: updatedName,
             email: email !== undefined ? email : a.email,
             position: position !== undefined ? position : a.position,
+            oarSide: oarSide !== undefined ? oarSide : a.oarSide,
             initials: name !== undefined ? getInitials(updatedName) : a.initials,
           };
         }),
       };
+    }
+
+    case 'SWAP_ATHLETES': {
+      // Exchange athleteIds between two seats (may be in different boats)
+      const { a: seatA, b: seatB } = action.payload;
+      return {
+        ...state,
+        boats: state.boats.map((boat) => {
+          const inA = boat.id === seatA.boatId;
+          const inB = boat.id === seatB.boatId;
+          if (!inA && !inB) return boat;
+          return {
+            ...boat,
+            seats: boat.seats.map((seat) => {
+              if (inA && seat.seatNum === seatA.seatNum) return { ...seat, athleteId: seatB.athleteId };
+              if (inB && seat.seatNum === seatB.seatNum) return { ...seat, athleteId: seatA.athleteId };
+              return seat;
+            }),
+          };
+        }),
+      };
+    }
+
+    case 'ADD_PAIR': {
+      return { ...state, pairs: [...state.pairs, action.payload] };
+    }
+
+    case 'REMOVE_PAIR': {
+      return { ...state, pairs: state.pairs.filter((p) => p.id !== action.payload) };
     }
 
     default:
@@ -292,6 +324,9 @@ export default function App() {
   const [activeDragId, setActiveDragId] = useState(null);
   const [showSignInModal, setShowSignInModal] = useState(false);
   const [pendingPublish, setPendingPublish] = useState(false);
+  const [swapMode, setSwapMode] = useState(false);
+  const [swapSource, setSwapSource] = useState(null); // { boatId, seatNum, athleteId }
+  const [showPairsManager, setShowPairsManager] = useState(false);
 
   const { user } = useAuthStore();
   const { athletes: rosterAthletes, batches: rosterBatches, addAthletes: rosterAddAthletes, setAthletes: rosterSetAthletes } = useRosterStore();
@@ -306,7 +341,7 @@ export default function App() {
   const [viewMode, setViewMode] = useState('coach');
   const [viewingAthleteId, setViewingAthleteId] = useState(null);
 
-  const { athletes, boats, published, publishData, sessions, publishedLineups } = state;
+  const { athletes, boats, published, publishData, sessions, publishedLineups, pairs } = state;
 
   // ── Supabase: load team data on mount ──────────────────────
   useEffect(() => {
@@ -527,12 +562,60 @@ export default function App() {
     setActiveDragId(null);
     const { active, over } = event;
     if (!over || !active) return;
-    const { boatId, seatNum } = over.data.current;
-    handleAssign(boatId, seatNum, active.id);
+    const { boatId, seatNum, currentAthleteId } = over.data.current;
+    if (currentAthleteId) {
+      // Target seat is occupied — find source seat and swap
+      let sourceBoatId = null;
+      let sourceSeatNum = null;
+      boats.forEach((boat) => {
+        boat.seats.forEach((seat) => {
+          if (seat.athleteId === active.id) {
+            sourceBoatId = boat.id;
+            sourceSeatNum = seat.seatNum;
+          }
+        });
+      });
+      if (sourceBoatId !== null) {
+        dispatch({ type: 'SWAP_ATHLETES', payload: {
+          a: { boatId: sourceBoatId, seatNum: sourceSeatNum, athleteId: active.id },
+          b: { boatId, seatNum, athleteId: currentAthleteId },
+        }});
+      }
+    } else {
+      handleAssign(boatId, seatNum, active.id);
+    }
   }
 
   function handleFillBoat(boatId, athleteIds) {
     dispatch({ type: 'FILL_BOAT_SEATS', payload: { boatId, athleteIds } });
+  }
+
+  function handleRearrange() {
+    dispatch({ type: 'UNLOCK' });
+    setSwapMode(true);
+    setSwapSource(null);
+  }
+
+  function handleSwapSelect({ boatId, seatNum, athleteId }) {
+    if (!swapSource) {
+      setSwapSource({ boatId, seatNum, athleteId });
+    } else {
+      if (swapSource.boatId === boatId && swapSource.seatNum === seatNum) {
+        // Tapped same seat — deselect
+        setSwapSource(null);
+        return;
+      }
+      dispatch({ type: 'SWAP_ATHLETES', payload: {
+        a: { boatId: swapSource.boatId, seatNum: swapSource.seatNum, athleteId: swapSource.athleteId },
+        b: { boatId, seatNum, athleteId },
+      }});
+      setSwapSource(null);
+    }
+  }
+
+  function handleDoneSwapping() {
+    setSwapMode(false);
+    setSwapSource(null);
   }
 
   async function handleUpdateAthlete(payload) {
@@ -581,6 +664,7 @@ export default function App() {
           athlete={viewingAthlete}
           athletes={athletes}
           publishedLineups={publishedLineups}
+          onUpdateAthlete={handleUpdateAthlete}
         />
       )}
 
@@ -602,8 +686,14 @@ export default function App() {
                   onRemove={handleRemove}
                   published={published}
                   onAddBoat={() => setShowAddBoat(true)}
-                  onTapSelect={handleTapSelect}
+                  onTapSelect={!swapMode ? handleTapSelect : undefined}
                   onFillSeats={handleFillBoat}
+                  pairs={pairs}
+                  onShowPairs={() => setShowPairsManager(true)}
+                  swapMode={swapMode}
+                  swapSource={swapSource}
+                  onSwapSelect={handleSwapSelect}
+                  onRearrange={handleRearrange}
                 />
 
                 <RosterGrid
@@ -633,7 +723,7 @@ export default function App() {
                     </button>
                   )}
 
-                  {published && (
+                  {published && !swapMode && (
                     <>
                       <button
                         onClick={() => setScreen('session')}
@@ -643,7 +733,7 @@ export default function App() {
                       </button>
                       <button
                         onClick={() => dispatch({ type: 'UNLOCK' })}
-                        className="w-full py-3 rounded-xl bg-[#1E293B] border border-white/[0.08] text-[#64748B] font-medium hover:text-white transition-colors"
+                        className="w-full py-3 rounded-xl bg-white border border-[#E5E7EB] text-[#6B7280] font-medium hover:bg-[#F9FAFB] hover:text-[#111827] transition-colors"
                       >
                         Edit Lineup
                       </button>
@@ -710,6 +800,40 @@ export default function App() {
             <Results sessions={sessions} />
           )}
         </>
+      )}
+
+      {/* Swap mode floating bar */}
+      {swapMode && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 bg-white border border-[#E5E7EB] rounded-2xl shadow-xl px-5 py-3">
+          <span className="text-sm text-[#6B7280]">
+            {swapSource ? '✓ Tap another seat to swap' : 'Tap a seat to select'}
+          </span>
+          {swapSource && (
+            <button
+              onClick={() => setSwapSource(null)}
+              className="text-xs text-[#9CA3AF] hover:text-[#111827] transition-colors"
+            >
+              Cancel
+            </button>
+          )}
+          <button
+            onClick={handleDoneSwapping}
+            className="px-4 py-1.5 bg-[#2563EB] text-white text-sm font-semibold rounded-xl hover:bg-[#1d4ed8] transition-colors"
+          >
+            Done Rearranging
+          </button>
+        </div>
+      )}
+
+      {/* Pairs Manager */}
+      {showPairsManager && (
+        <PairsManager
+          athletes={athletes}
+          pairs={pairs}
+          onAddPair={(pair) => dispatch({ type: 'ADD_PAIR', payload: pair })}
+          onRemovePair={(id) => dispatch({ type: 'REMOVE_PAIR', payload: id })}
+          onClose={() => setShowPairsManager(false)}
+        />
       )}
 
       {/* Sign-in gate modal (shown when guest tries to publish) */}
@@ -816,7 +940,15 @@ export default function App() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="text-[#111827] text-sm font-semibold truncate">{a.name}</div>
-                        <div className="text-[#9CA3AF] text-xs">{a.position}</div>
+                        <div className="flex items-center gap-1 text-[#9CA3AF] text-xs">
+                          <span>{a.position}</span>
+                          {a.oarSide && (
+                            <span className="flex gap-0.5 items-center ml-1">
+                              {(a.oarSide === 'port' || a.oarSide === 'both') && <span className="w-2 h-2 rounded-full bg-[#16A34A] block" />}
+                              {(a.oarSide === 'starboard' || a.oarSide === 'both') && <span className="w-2 h-2 rounded-full bg-[#DC2626] block" />}
+                            </span>
+                          )}
+                        </div>
                       </div>
                       <span className="text-[#9CA3AF] text-xs shrink-0">Assign →</span>
                     </button>

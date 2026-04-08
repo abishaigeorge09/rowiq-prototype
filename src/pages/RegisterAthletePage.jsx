@@ -30,6 +30,7 @@ export default function RegisterAthletePage() {
   const [form, setForm] = useState({
     name: '', email: '', password: '', confirmPassword: '',
     position: 'Mid',
+    oarSide: 'port',
   });
 
   function setField(field, value) {
@@ -82,6 +83,7 @@ export default function RegisterAthletePage() {
           role: 'athlete',
           status: 'active',
           team_id: resolvedTeamId,
+          oarSide: form.oarSide,
         },
       });
       setLoading(false);
@@ -270,6 +272,31 @@ export default function RegisterAthletePage() {
                     </button>
                   ))}
                 </div>
+              </div>
+
+              <div>
+                <label className={labelCls}>Oar Side Preference</label>
+                <div className="flex gap-2">
+                  {[
+                    { value: 'port', label: '🟢 Port' },
+                    { value: 'both', label: '🟢🔴 Both' },
+                    { value: 'starboard', label: '🔴 Starboard' },
+                  ].map(({ value, label }) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setField('oarSide', value)}
+                      className={`flex-1 py-2.5 rounded-xl text-xs font-medium transition-colors ${
+                        form.oarSide === value
+                          ? 'bg-[#2563EB] text-white'
+                          : 'bg-[#F3F4F6] text-[#6B7280] hover:text-[#111827] border border-[#E5E7EB]'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[#9CA3AF] text-xs mt-1.5">Which side of the boat do you prefer to row?</p>
               </div>
 
               {error && (

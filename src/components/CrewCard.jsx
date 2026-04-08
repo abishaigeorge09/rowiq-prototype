@@ -31,8 +31,18 @@ export default function CrewCard({ athlete, seatNum, overlapCount, isCurrentAthl
             <span className="text-[#2563EB] text-[10px] font-semibold shrink-0">YOU</span>
           )}
         </div>
-        <div className="text-[#9CA3AF] text-xs">
-          Seat {seatNum} · {athlete.position}
+        <div className="flex items-center gap-1.5 text-[#9CA3AF] text-xs">
+          <span>Seat {seatNum} · {athlete.position}</span>
+          {athlete.oarSide && (
+            <span className="flex gap-0.5 items-center">
+              {(athlete.oarSide === 'port' || athlete.oarSide === 'both') && (
+                <span className="w-2 h-2 rounded-full bg-[#16A34A] block" />
+              )}
+              {(athlete.oarSide === 'starboard' || athlete.oarSide === 'both') && (
+                <span className="w-2 h-2 rounded-full bg-[#DC2626] block" />
+              )}
+            </span>
+          )}
         </div>
       </div>
 

@@ -111,6 +111,7 @@ export function createAthlete(name, email, index) {
     position: POSITIONS[index % POSITIONS.length],
     initials: getInitials(name),
     colorIndex: index,
+    oarSide: null,
   };
 }
 

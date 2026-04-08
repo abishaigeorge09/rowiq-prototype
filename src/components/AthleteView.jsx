@@ -202,7 +202,7 @@ function HistoryCard({ entry, athlete, athletes, publishedLineups, index, isLast
   );
 }
 
-export default function AthleteView({ athlete, athletes, publishedLineups }) {
+export default function AthleteView({ athlete, athletes, publishedLineups, onUpdateAthlete }) {
   const stats = getAthleteStats(athlete.id, publishedLineups);
   const upcoming = getUpcomingSession(athlete.id, publishedLineups);
   const history = getAthleteHistory(athlete.id, publishedLineups).filter((h) => h.results !== null);
@@ -236,6 +236,32 @@ export default function AthleteView({ athlete, athletes, publishedLineups }) {
             gold={stats.bestFinish === 1}
           />
         </div>
+
+        {/* Oar side preference */}
+        {onUpdateAthlete && (
+          <div className="mt-4 pt-4 border-t border-[#F3F4F6]">
+            <p className="text-[#9CA3AF] text-[10px] font-semibold tracking-wider uppercase mb-2">Oar Side Preference</p>
+            <div className="flex gap-2">
+              {[
+                { value: 'port', label: '🟢 Port' },
+                { value: 'both', label: '🟢🔴 Both' },
+                { value: 'starboard', label: '🔴 Starboard' },
+              ].map(({ value, label }) => (
+                <button
+                  key={value}
+                  onClick={() => onUpdateAthlete({ id: athlete.id, oarSide: value })}
+                  className={`flex-1 py-2 rounded-xl text-xs font-medium transition-colors ${
+                    athlete.oarSide === value
+                      ? 'bg-[#2563EB] text-white'
+                      : 'bg-[#F3F4F6] text-[#6B7280] hover:text-[#111827]'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Tomorrow's / Next Session */}
