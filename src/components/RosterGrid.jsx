@@ -4,6 +4,22 @@ import CSVUpload from './CSVUpload';
 import ImportRosterSheet from './ImportRosterSheet';
 import { getTotalAssigned, parseCSV } from '../utils/helpers';
 
+const TEMPLATE_CSV = `name,email,position,seat_preference,boat_class
+Alex Johnson,alex@example.com,Stroke,port,8+
+Bella Martinez,bella@example.com,Mid,starboard,8+
+Chris Park,chris@example.com,Bow,port,4+
+`;
+
+function downloadTemplate() {
+  const blob = new Blob([TEMPLATE_CSV], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'rowiq_roster_template.csv';
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
 export default function RosterGrid({ athletes, boats, onImport, onLoadSample, isAssigned, published, batches = [] }) {
   const assignedCount = getTotalAssigned(boats);
   const [activeBatch, setActiveBatch] = useState(null);
@@ -49,6 +65,19 @@ export default function RosterGrid({ athletes, boats, onImport, onLoadSample, is
           </div>
           <div className="flex items-center gap-3">
             <input ref={fileRef} type="file" accept=".csv" onChange={handleReuploadFile} className="hidden" />
+            <button
+              onClick={downloadTemplate}
+              className="text-[#9CA3AF] text-xs font-medium hover:text-[#6B7280] transition-colors"
+              title="Download CSV template"
+            >
+              ↓ Template
+            </button>
+            <button
+              onClick={onLoadSample}
+              className="text-[#6B7280] text-xs font-medium hover:text-[#2563EB] transition-colors"
+            >
+              Load Sample
+            </button>
             <button
               onClick={() => fileRef.current?.click()}
               className="text-[#6B7280] text-xs font-medium hover:text-[#2563EB] transition-colors"

@@ -227,7 +227,7 @@ export default function PerformanceDashboard({ athletes, publishedLineups }) {
   // Compute cutoff date from filter
   const filteredLineups = useMemo(() => {
     if (dateRange === 'all') return publishedLineups;
-    const now = new Date('2026-04-08'); // current date
+    const now = new Date();
     const months = dateRange === '1m' ? 1 : dateRange === '3m' ? 3 : 6;
     const cutoff = new Date(now);
     cutoff.setMonth(cutoff.getMonth() - months);
