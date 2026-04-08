@@ -230,9 +230,9 @@ export default function AthleteDetailPanel({ athlete, athletes, publishedLineups
                   <p className="text-[#9CA3AF] text-[10px] font-semibold tracking-wider uppercase mb-1.5">Oar Side</p>
                   <div className="flex gap-1.5">
                     {[
-                      { value: 'port', label: '🟢 Port' },
-                      { value: 'both', label: '🟢🔴 Both' },
-                      { value: 'starboard', label: '🔴 Stbd' },
+                      { value: 'port', label: '🔴 Port' },
+                      { value: 'both', label: '🔴🟢 Both' },
+                      { value: 'starboard', label: '🟢 Stbd' },
                     ].map(({ value, label }) => (
                       <button
                         key={value}

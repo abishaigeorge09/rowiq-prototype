@@ -278,9 +278,9 @@ export default function RegisterAthletePage() {
                 <label className={labelCls}>Oar Side Preference</label>
                 <div className="flex gap-2">
                   {[
-                    { value: 'port', label: '🟢 Port' },
-                    { value: 'both', label: '🟢🔴 Both' },
-                    { value: 'starboard', label: '🔴 Starboard' },
+                    { value: 'port', label: '🔴 Port' },
+                    { value: 'both', label: '🔴🟢 Both' },
+                    { value: 'starboard', label: '🟢 Starboard' },
                   ].map(({ value, label }) => (
                     <button
                       key={value}

@@ -36,10 +36,10 @@ export default function CrewCard({ athlete, seatNum, overlapCount, isCurrentAthl
           {athlete.oarSide && (
             <span className="flex gap-0.5 items-center">
               {(athlete.oarSide === 'port' || athlete.oarSide === 'both') && (
-                <span className="w-2 h-2 rounded-full bg-[#16A34A] block" />
+                <span className="w-2 h-2 rounded-full bg-[#DC2626] block" />
               )}
               {(athlete.oarSide === 'starboard' || athlete.oarSide === 'both') && (
-                <span className="w-2 h-2 rounded-full bg-[#DC2626] block" />
+                <span className="w-2 h-2 rounded-full bg-[#16A34A] block" />
               )}
             </span>
           )}

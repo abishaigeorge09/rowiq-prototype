@@ -6,10 +6,10 @@ function OarDots({ oarSide }) {
   return (
     <div className="absolute -bottom-0.5 -right-0.5 flex gap-0.5">
       {(oarSide === 'port' || oarSide === 'both') && (
-        <span className="w-2.5 h-2.5 rounded-full bg-[#16A34A] ring-1 ring-white block" />
+        <span className="w-2.5 h-2.5 rounded-full bg-[#DC2626] ring-1 ring-white block" />
       )}
       {(oarSide === 'starboard' || oarSide === 'both') && (
-        <span className="w-2.5 h-2.5 rounded-full bg-[#DC2626] ring-1 ring-white block" />
+        <span className="w-2.5 h-2.5 rounded-full bg-[#16A34A] ring-1 ring-white block" />
       )}
     </div>
   );

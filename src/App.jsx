@@ -76,6 +76,7 @@ function reducer(state, action) {
           ...(a.position ? { position: a.position } : {}),
           ...(a.colorIndex !== undefined ? { colorIndex: a.colorIndex } : {}),
           ...(a.initials ? { initials: a.initials } : {}),
+          ...(a.oarSide ? { oarSide: a.oarSide } : {}),
         };
       });
       return { ...state, athletes };

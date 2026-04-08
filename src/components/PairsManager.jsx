@@ -6,10 +6,10 @@ function OarDots({ oarSide }) {
   return (
     <span className="flex gap-0.5 items-center ml-1">
       {(oarSide === 'port' || oarSide === 'both') && (
-        <span className="w-2 h-2 rounded-full bg-[#16A34A] block" />
+        <span className="w-2 h-2 rounded-full bg-[#DC2626] block" />
       )}
       {(oarSide === 'starboard' || oarSide === 'both') && (
-        <span className="w-2 h-2 rounded-full bg-[#DC2626] block" />
+        <span className="w-2 h-2 rounded-full bg-[#16A34A] block" />
       )}
     </span>
   );
@@ -170,7 +170,7 @@ export default function PairsManager({ athletes, pairs, onAddPair, onRemovePair,
                         <p className="text-[#111827] text-sm font-semibold">{pair.name}</p>
                         <div className="flex items-center gap-3 mt-1">
                           <span className="flex items-center gap-1 text-xs text-[#6B7280]">
-                            <span className="w-2 h-2 rounded-full bg-[#16A34A] block" />
+                            <span className="w-2 h-2 rounded-full bg-[#DC2626] block" />
                             {portA ? (
                               <span className="flex items-center gap-1">
                                 <div className="w-5 h-5 rounded-full flex items-center justify-center text-white text-[8px] font-bold" style={{ backgroundColor: getAvatarColor(portA.colorIndex) }}>
@@ -182,7 +182,7 @@ export default function PairsManager({ athletes, pairs, onAddPair, onRemovePair,
                           </span>
                           <span className="text-[#D1D5DB] text-xs">+</span>
                           <span className="flex items-center gap-1 text-xs text-[#6B7280]">
-                            <span className="w-2 h-2 rounded-full bg-[#DC2626] block" />
+                            <span className="w-2 h-2 rounded-full bg-[#16A34A] block" />
                             {stbdA ? (
                               <span className="flex items-center gap-1">
                                 <div className="w-5 h-5 rounded-full flex items-center justify-center text-white text-[8px] font-bold" style={{ backgroundColor: getAvatarColor(stbdA.colorIndex) }}>
@@ -222,7 +222,7 @@ export default function PairsManager({ athletes, pairs, onAddPair, onRemovePair,
             </div>
             <AthletePicker
               label="Port athlete"
-              color="#16A34A"
+              color="#DC2626"
               athletes={athletes}
               excludeId={stbdId}
               value={portId}
@@ -230,7 +230,7 @@ export default function PairsManager({ athletes, pairs, onAddPair, onRemovePair,
             />
             <AthletePicker
               label="Starboard athlete"
-              color="#DC2626"
+              color="#16A34A"
               athletes={athletes}
               excludeId={portId}
               value={stbdId}

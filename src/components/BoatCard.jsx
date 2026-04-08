@@ -126,8 +126,8 @@ export default function BoatCard({
             {/* PORT column */}
             <div className="flex flex-col flex-1 min-w-0">
               <div className="flex items-center gap-1 mb-2">
-                <span className="w-2 h-2 rounded-full bg-[#16A34A] shrink-0" />
-                <span className="text-[#16A34A] text-[10px] font-bold tracking-widest uppercase">Port</span>
+                <span className="w-2 h-2 rounded-full bg-[#DC2626] shrink-0" />
+                <span className="text-[#DC2626] text-[10px] font-bold tracking-widest uppercase">Port</span>
               </div>
               <div className="flex flex-col gap-2 items-center">
                 {portSeats.map((seat) => (
@@ -156,8 +156,8 @@ export default function BoatCard({
             {/* STARBOARD column */}
             <div className="flex flex-col flex-1 min-w-0">
               <div className="flex items-center justify-end gap-1 mb-2">
-                <span className="text-[#DC2626] text-[10px] font-bold tracking-widest uppercase">Stbd</span>
-                <span className="w-2 h-2 rounded-full bg-[#DC2626] shrink-0" />
+                <span className="text-[#16A34A] text-[10px] font-bold tracking-widest uppercase">Stbd</span>
+                <span className="w-2 h-2 rounded-full bg-[#16A34A] shrink-0" />
               </div>
               <div className="flex flex-col gap-2 items-center">
                 {stbdSeats.map((seat) => (

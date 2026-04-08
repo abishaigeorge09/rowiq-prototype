@@ -243,9 +243,9 @@ export default function AthleteView({ athlete, athletes, publishedLineups, onUpd
             <p className="text-[#9CA3AF] text-[10px] font-semibold tracking-wider uppercase mb-2">Oar Side Preference</p>
             <div className="flex gap-2">
               {[
-                { value: 'port', label: '🟢 Port' },
-                { value: 'both', label: '🟢🔴 Both' },
-                { value: 'starboard', label: '🔴 Starboard' },
+                { value: 'port', label: '🔴 Port' },
+                { value: 'both', label: '🔴🟢 Both' },
+                { value: 'starboard', label: '🟢 Starboard' },
               ].map(({ value, label }) => (
                 <button
                   key={value}

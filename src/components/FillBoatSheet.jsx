@@ -6,10 +6,10 @@ function OarDots({ oarSide }) {
   return (
     <span className="flex gap-0.5 items-center ml-1">
       {(oarSide === 'port' || oarSide === 'both') && (
-        <span className="w-2 h-2 rounded-full bg-[#16A34A] block" />
+        <span className="w-2 h-2 rounded-full bg-[#DC2626] block" />
       )}
       {(oarSide === 'starboard' || oarSide === 'both') && (
-        <span className="w-2 h-2 rounded-full bg-[#DC2626] block" />
+        <span className="w-2 h-2 rounded-full bg-[#16A34A] block" />
       )}
     </span>
   );
@@ -233,12 +233,12 @@ export default function FillBoatSheet({ boat, athletes, pairs = [], onFillSeats,
                           <p className="text-[#111827] text-sm font-semibold">{pair.name}</p>
                           <div className="flex items-center gap-2 text-xs text-[#9CA3AF] mt-0.5">
                             <span className="flex items-center gap-1">
-                              <span className="w-2 h-2 rounded-full bg-[#16A34A] block" />
+                              <span className="w-2 h-2 rounded-full bg-[#DC2626] block" />
                               {portA?.name.split(' ')[0]}
                             </span>
                             <span>+</span>
                             <span className="flex items-center gap-1">
-                              <span className="w-2 h-2 rounded-full bg-[#DC2626] block" />
+                              <span className="w-2 h-2 rounded-full bg-[#16A34A] block" />
                               {stbdA?.name.split(' ')[0]}
                             </span>
                           </div>
