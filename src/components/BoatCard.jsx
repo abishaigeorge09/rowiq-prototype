@@ -123,41 +123,11 @@ export default function BoatCard({
           </div>
         ) : (
           <div className="flex-1 flex gap-1 min-h-0">
-            {/* PORT column */}
+            {/* STARBOARD column — left side */}
             <div className="flex flex-col flex-1 min-w-0">
               <div className="flex items-center gap-1 mb-2">
-                <span className="w-2 h-2 rounded-full bg-[#DC2626] shrink-0" />
-                <span className="text-[#DC2626] text-[10px] font-bold tracking-widest uppercase">Port</span>
-              </div>
-              <div className="flex flex-col gap-2 items-center">
-                {portSeats.map((seat) => (
-                  <SeatCircle
-                    key={seat.seatNum}
-                    seat={seat}
-                    boatId={boat.id}
-                    athlete={getAthleteForSeat(seat)}
-                    onRemove={(seatNum) => onRemove(boat.id, seatNum)}
-                    published={published}
-                    onTapSelect={(seatNum) => onTapSelect && onTapSelect(boat.id, seatNum)}
-                    swapMode={swapMode}
-                    swapSource={swapSource}
-                    onSwapSelect={onSwapSelect}
-                    isPortSide={true}
-                  />
-                ))}
-              </div>
-            </div>
-
-            {/* Center hull */}
-            <div className="flex items-stretch justify-center w-8 shrink-0 py-6">
-              <HullSVG />
-            </div>
-
-            {/* STARBOARD column */}
-            <div className="flex flex-col flex-1 min-w-0">
-              <div className="flex items-center justify-end gap-1 mb-2">
-                <span className="text-[#16A34A] text-[10px] font-bold tracking-widest uppercase">Stbd</span>
                 <span className="w-2 h-2 rounded-full bg-[#16A34A] shrink-0" />
+                <span className="text-[#16A34A] text-[10px] font-bold tracking-widest uppercase">Stbd</span>
               </div>
               <div className="flex flex-col gap-2 items-center">
                 {stbdSeats.map((seat) => (
@@ -173,6 +143,36 @@ export default function BoatCard({
                     swapSource={swapSource}
                     onSwapSelect={onSwapSelect}
                     isPortSide={false}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Center hull */}
+            <div className="flex items-stretch justify-center w-8 shrink-0 py-6">
+              <HullSVG />
+            </div>
+
+            {/* PORT column — right side */}
+            <div className="flex flex-col flex-1 min-w-0">
+              <div className="flex items-center justify-end gap-1 mb-2">
+                <span className="text-[#DC2626] text-[10px] font-bold tracking-widest uppercase">Port</span>
+                <span className="w-2 h-2 rounded-full bg-[#DC2626] shrink-0" />
+              </div>
+              <div className="flex flex-col gap-2 items-center">
+                {portSeats.map((seat) => (
+                  <SeatCircle
+                    key={seat.seatNum}
+                    seat={seat}
+                    boatId={boat.id}
+                    athlete={getAthleteForSeat(seat)}
+                    onRemove={(seatNum) => onRemove(boat.id, seatNum)}
+                    published={published}
+                    onTapSelect={(seatNum) => onTapSelect && onTapSelect(boat.id, seatNum)}
+                    swapMode={swapMode}
+                    swapSource={swapSource}
+                    onSwapSelect={onSwapSelect}
+                    isPortSide={true}
                   />
                 ))}
               </div>
