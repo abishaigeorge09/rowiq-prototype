@@ -224,6 +224,30 @@ export default function AthleteDetailPanel({ athlete, athletes, publishedLineups
                     </button>
                   ))}
                 </div>
+
+                {/* Oar side preference */}
+                <div className="mt-3">
+                  <p className="text-[#9CA3AF] text-[10px] font-semibold tracking-wider uppercase mb-1.5">Oar Side</p>
+                  <div className="flex gap-1.5">
+                    {[
+                      { value: 'port', label: '🟢 Port' },
+                      { value: 'both', label: '🟢🔴 Both' },
+                      { value: 'starboard', label: '🔴 Stbd' },
+                    ].map(({ value, label }) => (
+                      <button
+                        key={value}
+                        onClick={() => handleUpdate('oarSide', value)}
+                        className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                          athlete.oarSide === value
+                            ? 'bg-[#2563EB] text-white'
+                            : 'bg-[#F3F4F6] text-[#6B7280] hover:text-[#111827]'
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
